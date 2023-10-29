@@ -218,8 +218,18 @@ void func_800FC594_1101B4(void) {
 }
 
 
-int main(void) {
-    printf("Starting Seed: 0x%08lX\n", cur_rng_seed);
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        printf("Usage: %s <hexadecimal_seed>\n", argv[0]);
+        return 1;
+    }
+
+    if (sscanf(argv[1], "0x%08lX", &cur_rng_seed) != 1) {
+        printf("Invalid hexadecimal input. Please provide a 32-bit hexadecimal number.\n");
+        return 1;
+    }
+
+    printf("Using Seed: 0x%08lX\n", cur_rng_seed);
     func_800FC594_1101B4(); //place hidden blocks
     printf("Coin Block Space ID: 0x%02X\n", coinBlockSpaceIndex);
     printf("Star Block Space ID: 0x%02X\n", starBlockSpaceIndex);
