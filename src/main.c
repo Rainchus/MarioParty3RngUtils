@@ -1,5 +1,8 @@
 #include <stdio.h>
+#include <string.h>
 #include "mp1.h"
+
+#define ARRAY_COUNT(arr) (sizeof(arr) / sizeof(arr[0]))
 
 s16 coinBlockSpaceIndex = -1; //D_800CE1C4
 s16 starBlockSpaceIndex = -1; //D_800D124E
@@ -53,28 +56,6 @@ s32 func_80035F98_36B98(s32 input) {
 
     return byteValue & mask;
 }
-
-// s32 func_80035F98_36B98(s32 arg0) {
-//     s32 var_v0;
-//     s32 var_v1;
-
-    
-//     if (arg0 < 0) {
-//         var_v0 = arg0 + 7;
-//     } else {
-//         var_v0 = arg0;
-//     }
-
-//     if (arg0 < 0) {
-//         var_v1 = arg0 + 7;
-//     } else {
-//         var_v1 = arg0;
-//     }
-
-//     printf("var_v0: %02X\nvar_v1: %02X\n\n", var_v0, var_v1);
-    
-//     return D_800CD0B6[var_v0] & (1 << (arg0 - var_v1));
-// }
 
 s16 func_800EBCD4_FF8F4(u8 arg0) {
     return func_800EB5DC_FF1FC(2, arg0);
@@ -217,22 +198,44 @@ void func_800FC594_1101B4(void) {
     }
 }
 
+s32 itemIDAmounts[148]; //ARRAY_COUNT(spaces)
 
 int main(int argc, char *argv[]) {
+    s32 gen = 0;
+
     if (argc != 2) {
         printf("Usage: %s <hexadecimal_seed>\n", argv[0]);
         return 1;
     }
 
     if (sscanf(argv[1], "0x%08lX", &cur_rng_seed) != 1) {
-        printf("Invalid hexadecimal input. Please provide a 32-bit hexadecimal number.\n");
-        return 1;
+        if (strncmp("--gen", argv[1], sizeof("--gen")) == 0) {
+            gen = 1;
+        } else {
+            printf("Invalid hexadecimal input. Please provide a 32-bit hexadecimal number.\n");
+            return 1;
+        }
     }
 
-    printf("Using Seed: 0x%08lX\n", cur_rng_seed);
-    func_800FC594_1101B4(); //place hidden blocks
-    printf("Coin Block Space ID: 0x%02X\n", coinBlockSpaceIndex);
-    printf("Star Block Space ID: 0x%02X\n", starBlockSpaceIndex);
-    printf("Item Block Space ID: 0x%02X\n", itemBlockSpaceIndex);
+    if (gen == 1) {
+        for (u32 i = 0; i < 0xFFFFFFFF; i++) {
+            cur_rng_seed = i;
+            func_800FC594_1101B4();
+            itemIDAmounts[itemBlockSpaceIndex]++;
+            coinBlockSpaceIndex = -1;
+            starBlockSpaceIndex = -1;
+            itemBlockSpaceIndex = -1;
+        }
+        for (int i = 0; i < ARRAY_COUNT(itemIDAmounts); i++) {
+            printf("Space %d: %ld\n", i, itemIDAmounts[i]);
+        }
+    } else {
+        printf("Using Seed: 0x%08lX\n", cur_rng_seed);
+        func_800FC594_1101B4(); //place hidden blocks
+        printf("Coin Block Space ID: 0x%02X\n", coinBlockSpaceIndex);
+        printf("Star Block Space ID: 0x%02X\n", starBlockSpaceIndex);
+        printf("Item Block Space ID: 0x%02X\n", itemBlockSpaceIndex);
+    }
+
     return 0;
 }
