@@ -1,6 +1,8 @@
 #ifndef _MP1_H
 #define _MP1_H
 
+#define ARRAY_COUNT(arr) (sizeof(arr) / sizeof(arr[0]))
+
 typedef unsigned long u32;
 typedef long s32;
 typedef unsigned short u16;
