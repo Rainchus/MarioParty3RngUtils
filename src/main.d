@@ -431,7 +431,7 @@ void CPUGetWatchFromItemSpace(s32 rollValue) {
         }
 
         s32 itemSpaceOutcome = func_800EEF80_102BA0(5.0f);
-        if (itemSpaceOutcome != 0) { //is toad question
+        if (itemSpaceOutcome != 0) { //
             continue;
         }
 
@@ -440,10 +440,9 @@ void CPUGetWatchFromItemSpace(s32 rollValue) {
         }
 
         s32 questionAsked = func_800EEF80_102BA0(5.0f);
-        //previously, i thought a specific toad question was required. It is not!
-        // if (questionAsked != 2) {
-        //     continue;
-        // }
+        if (questionAsked != 2) {
+            continue;
+        }
 
         for (s32 j = 0; j < 56; j++) {
             ADV_SEED(cur_rng_seed);
@@ -488,26 +487,19 @@ void CPUGetWatchFromItemSpace(s32 rollValue) {
 void SimDuelMode(void);
 void SimDuelMode2(void);
 void SimDuelMode3(void);
-
+#define ANSI_GREEN "\x1b[32m"
+#define ANSI_RESET "\x1b[0m"
+#define ANSI_BLUE "\x1b[34m"
 
 void PrintArgUsage(void) {
-    printf(
-        ANSI_GREEN"Run the program with a command and no additional args to see usage\n"ANSI_RESET
-        "Commands List:\n"
-        "--simduel\n"
-        "--simduel2\n"
-        "--simduel3\n"
-        "--rngadv\n"
-        "--rollchain\n"
-        "--rollchain2(pointless?)\n"
-        "--cpuitemspacewatch\n"
-        "--hiddenblockgen\n"
-    );
-    //printf("Arg stuff\n");
+    printf("Arg stuff\n");
 }
 
 int main(int argc, char *argv[]) {
-    //printf(ANSI_GREEN"MP3 rng util\n"ANSI_RESET);
+    cur_rng_seed = 0x8C65CA1D;
+    u8 rollTemp = rollDice();
+    printf("Roll: %d\n", rollTemp);
+    printf(ANSI_GREEN"MP3 rng util\n"ANSI_RESET);
     if (argc == 1 || strncmp("--options", argv[1], sizeof("--options")) == 0) {
         PrintArgUsage();
         return 0;
@@ -565,14 +557,9 @@ int main(int argc, char *argv[]) {
     if (strncmp("--rollchain", argv[1], sizeof("--rollchain")) == 0) {
         u32 chain_bound;
         //printf("arg count: %d\n", argc);
-        if (argc <= 2) {
-            printf("Usage: %s --rollchain <rollValue> <chainAmount(optional, defaults to 2)>\n", argv[0]);
-            return 0;
-        }
         if (argc == 4) {
             sscanf(argv[3], "%08lX", &chain_bound);
         } else {
-            printf("Chain length defaulting to 2\n");
             chain_bound = 2;
         }
 

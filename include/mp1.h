@@ -1,6 +1,8 @@
 #ifndef _MP1_H
 #define _MP1_H
 
+#include "ansi_colors.h"
+
 #define ARRAY_COUNT(arr) (sizeof(arr) / sizeof(arr[0]))
 
 typedef unsigned long u32;
@@ -28,4 +30,11 @@ typedef struct SpaceData {
 } SpaceData;
 
 extern SpaceData spaces[];
+extern u32 cur_rng_seed;
+
+#define ADV_SEED(seed) seed = (seed * 0x41C64E6D + 0x3039)
+
+u8 rollDice(void);
+u8 RNGPercentChance(s8 arg0);
+s32 func_800EEF80_102BA0(f32 arg0);
 #endif
