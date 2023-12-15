@@ -2,6 +2,66 @@
 #include <string.h>
 #include "../include/mp1.h"
 
+//80109290 function that advances rng on cannon A press
+//164 frames from cannon A press to dice roll
+
+//menuing as fast as I could, 924 calls when 1st player (cpu) rolls
+/*
+Eon Timer notes:
+Set to Gen 3
+For evedrive, hover over Start Game and set calibration to 5096
+
+For cpu to roll 1: target frame: ? Quite Slow (calls = 3147, or 4871)
+Very slow, probably dont bother
+Calibration: 5096
+Pre-Timer: 2500
+TargetFrame: ?
+
+For cpu to roll 2: target frame: 1850 (calls = 1084)
+Calibration: 5096
+Pre-Timer: 2500
+TargetFrame: 1850
+
+For cpu to roll 3: target frame: ? (calls = 3222)
+Very slow, probably dont bother
+Calibration: 5096
+Pre-Timer: 2500
+TargetFrame: ?
+
+For cpu to roll 4: target frame: 2392 (calls = 2154) 
+Calibration: 5096
+Pre-Timer: 2500
+TargetFrame: 2392
+
+For cpu to roll 5: target frame: 2691 (2681 atm?) (calls = 1499)
+Calibration: 5096
+Pre-Timer: 2500
+TargetFrame: 2691 (2681 atm?)
+
+For cpu to roll 6: target frame: 1884 (calls = 1092) (31.491 seconds, 944.73 frames)
+Calibration: 5096
+Pre-Timer: 2500
+TargetFrame: 1884
+
+For cpu to roll 7: target frame: ? (calls = 6588)
+Very slow, probably dont bother (although going into battle royale tutorial and backing out twice helps a lot)
+Calibration: 5096
+Pre-Timer: 2500
+TargetFrame: ?
+
+For cpu to roll 8: target frame: 1763 (calls = 1041)
+Calibration: 5096
+Pre-Timer: 2500
+TargetFrame: 1763
+
+For cpu to roll 9: target frame: 1866 (calls = 1892)
+!!!!NOTE: wait on star spawn on opening scene
+Calibration: 5096
+Pre-Timer: 2500
+TargetFrame: 1866
+
+*/
+
 //HUGE NOTE: Pausing and unpausing can be done frame perfectly because of a lag spike that occurs
 //With this, we can advance rng 5 times whenever we want easily
 
@@ -373,30 +433,734 @@ void splitRngManip2Parts(void) {
 }
 
 //3 is glitched? also doesn't account for cpu decision at junction
-// s32 FramesToWalkToItemSpace[] = {
+// s32 FramesToWalkToItemSpaceNormalWalkNormalMessage[] = {
 //     0, 42, 53, 123, -1, -1, -1, -1, -1, -1, -1 
 // };
 
 typedef struct framesToRollDecision {
-    s32 firstHalf;
-    s32 secondHalf;
+    s32 firstHalf; //up to junction decision
+    s32 secondHalf; //after junction decision
     s32 cpuWeight;
     s32 decisionWanted;
 } framesToRollDecision;
 
-framesToRollDecision FramesToWalkToItemSpace[] = {
-/* 0x00 */ {0, 0, 0, 0},
-/* 0x01 */ {42, 0, 0, 0},
-/* 0x02 */ {53, 0, 0, 0},
-/* 0x03 */ {39, 83, 50, 1}, //want CPU to get left not up
-/* 0x04 */ {50, 83, 50, 1},
-/* 0x05 */ {268, 83, 50, 1},
-/* 0x06 */ {279, 83, 50, 1},
-/* 0x07 */ {290, 83, 50, 1},
-/* 0x08 */ {301, 83, 50, 1},
-/* 0x09 */ {312, 83, 50, 1},
-/* 0x0A */ {0, 0, 0, 0},
+#define CPU_NONE -1
+#define CPU_UP 0
+#define CPU_LEFT 1
+
+//normal fast walk speed, fast message speed
+framesToRollDecision FramesToWalkToItemSpaceFastWalkFastMessage[] = {
+/* 0x00 */ {0, 0, 0, CPU_NONE},
+/* 0x01 */ {37, 0, 0, CPU_NONE},
+/* 0x02 */ {37, 0, 0, CPU_NONE},
 };
+
+//normal walk speed, normal message speed
+framesToRollDecision FramesToWalkToItemSpaceNormalWalkNormalMessage[] = {
+/* 0x00 */ {0, 0, 0, CPU_NONE},
+/* 0x01 */ {42, 0, 0, CPU_NONE},
+/* 0x02 */ {53, 0, 0, CPU_NONE},
+/* 0x03 */ {39, 83, 50, CPU_LEFT},
+/* 0x04 */ {50, 83, 50, CPU_LEFT},
+/* 0x05 */ {268, 83, 50, CPU_LEFT},
+/* 0x06 */ {279, 83, 50, CPU_LEFT},
+/* 0x07 */ {290, 83, 50, CPU_LEFT},
+/* 0x08 */ {301, 83, 50, CPU_LEFT},
+/* 0x09 */ {312, 83, 50, CPU_LEFT},
+/* 0x0A */ {0, 0, 0, CPU_NONE},
+};
+
+#define NO_BANK_OR_JUNCTION 0
+#define JUNCTION_ONLY 1
+#define BANK_AND_JUNCTION 2
+
+typedef struct CpuWalkStats {
+    s32 advancementsFromBankToJunction;
+    s32 advancementsJunctionToItemSpace; //or start roll to item space if no junction
+    s32 advancementsItemSpaceToQuestion;
+    s32 advancementsItemSpaceToCpuDecision;
+    s32 advancementsCpuDecisionToWatchChosen;
+} CpuWalkStats;
+
+/*
+FastFast:
+43 - 37 = 6 advances per space
+*/
+
+CpuWalkStats FastFast[] = {
+    //0
+    {
+    .advancementsFromBankToJunction = 0,
+    .advancementsJunctionToItemSpace = 37,
+    .advancementsItemSpaceToQuestion = 648,
+    .advancementsItemSpaceToCpuDecision = 56,
+    .advancementsCpuDecisionToWatchChosen = 108
+    },
+    //1
+    {
+    .advancementsFromBankToJunction = 0,
+    .advancementsJunctionToItemSpace = 43,
+    .advancementsItemSpaceToQuestion = 648,
+    .advancementsItemSpaceToCpuDecision = 56,
+    .advancementsCpuDecisionToWatchChosen = 108
+    },
+    //2
+    {
+    .advancementsFromBankToJunction = 34,
+    .advancementsJunctionToItemSpace = 68,
+    .advancementsItemSpaceToQuestion = 648,
+    .advancementsItemSpaceToCpuDecision = 56,
+    .advancementsCpuDecisionToWatchChosen = 108
+    },
+    //3
+    {
+    .advancementsFromBankToJunction = 40,
+    .advancementsJunctionToItemSpace = 68,
+    .advancementsItemSpaceToQuestion = 648,
+    .advancementsItemSpaceToCpuDecision = 56,
+    .advancementsCpuDecisionToWatchChosen = 108
+    },
+    //4
+    {
+    .advancementsFromBankToJunction = 213,
+    .advancementsJunctionToItemSpace = 68,
+    .advancementsItemSpaceToQuestion = 648,
+    .advancementsItemSpaceToCpuDecision = 56,
+    .advancementsCpuDecisionToWatchChosen = 108
+    },
+    //5
+    {
+    .advancementsFromBankToJunction = 219,
+    .advancementsJunctionToItemSpace = 68,
+    .advancementsItemSpaceToQuestion = 648,
+    .advancementsItemSpaceToCpuDecision = 56,
+    .advancementsCpuDecisionToWatchChosen = 108
+    },
+    //6
+    {
+    .advancementsFromBankToJunction = 225,
+    .advancementsJunctionToItemSpace = 68,
+    .advancementsItemSpaceToQuestion = 648,
+    .advancementsItemSpaceToCpuDecision = 56,
+    .advancementsCpuDecisionToWatchChosen = 108
+    },
+    //7
+    {
+    .advancementsFromBankToJunction = 231,
+    .advancementsJunctionToItemSpace = 68,
+    .advancementsItemSpaceToQuestion = 648,
+    .advancementsItemSpaceToCpuDecision = 56,
+    .advancementsCpuDecisionToWatchChosen = 108
+    },
+    //8
+    {
+    .advancementsFromBankToJunction = 237,
+    .advancementsJunctionToItemSpace = 68,
+    .advancementsItemSpaceToQuestion = 648,
+    .advancementsItemSpaceToCpuDecision = 56,
+    .advancementsCpuDecisionToWatchChosen = 108
+    },
+};
+
+/*
+NormalNormal:
+53 - 42 = 11 advances per space
+*/
+
+CpuWalkStats NormalNormal[] = {
+    //0
+    {
+    .advancementsFromBankToJunction = 0,
+    .advancementsJunctionToItemSpace = 42,
+    .advancementsItemSpaceToQuestion = 728,
+    .advancementsItemSpaceToCpuDecision = 56,
+    .advancementsCpuDecisionToWatchChosen = 188
+    },
+
+    //1
+    {
+    .advancementsFromBankToJunction = 0,
+    .advancementsJunctionToItemSpace = 53,
+    .advancementsItemSpaceToQuestion = 728,
+    .advancementsItemSpaceToCpuDecision = 56,
+    .advancementsCpuDecisionToWatchChosen = 188
+    },
+
+    //2
+    {
+    .advancementsFromBankToJunction = 39,
+    .advancementsJunctionToItemSpace = 83,
+    .advancementsItemSpaceToQuestion = 728,
+    .advancementsItemSpaceToCpuDecision = 56,
+    .advancementsCpuDecisionToWatchChosen = 188
+    },
+    //3
+    {
+    .advancementsFromBankToJunction = 50,
+    .advancementsJunctionToItemSpace = 83,
+    .advancementsItemSpaceToQuestion = 728,
+    .advancementsItemSpaceToCpuDecision = 56,
+    .advancementsCpuDecisionToWatchChosen = 188
+    },
+    //4
+    {
+    .advancementsFromBankToJunction = 268,
+    .advancementsJunctionToItemSpace = 83,
+    .advancementsItemSpaceToQuestion = 728,
+    .advancementsItemSpaceToCpuDecision = 56,
+    .advancementsCpuDecisionToWatchChosen = 188
+    },
+    //5
+    {
+    .advancementsFromBankToJunction = 279,
+    .advancementsJunctionToItemSpace = 83,
+    .advancementsItemSpaceToQuestion = 728,
+    .advancementsItemSpaceToCpuDecision = 56,
+    .advancementsCpuDecisionToWatchChosen = 188
+    },
+    //6
+    {
+    .advancementsFromBankToJunction = 290,
+    .advancementsJunctionToItemSpace = 83,
+    .advancementsItemSpaceToQuestion = 728,
+    .advancementsItemSpaceToCpuDecision = 56,
+    .advancementsCpuDecisionToWatchChosen = 188
+    },
+    //7
+    {
+    .advancementsFromBankToJunction = 301,
+    .advancementsJunctionToItemSpace = 83,
+    .advancementsItemSpaceToQuestion = 728,
+    .advancementsItemSpaceToCpuDecision = 56,
+    .advancementsCpuDecisionToWatchChosen = 188
+    },
+    //8
+    {
+    .advancementsFromBankToJunction = 312,
+    .advancementsJunctionToItemSpace = 83,
+    .advancementsItemSpaceToQuestion = 728,
+    .advancementsItemSpaceToCpuDecision = 56,
+    .advancementsCpuDecisionToWatchChosen = 188
+    },
+};
+
+/*
+SlowSlow
+63 - 47 = 16 advances per space
+*/
+
+CpuWalkStats SlowSlow[] = {
+    //0
+    {
+    .advancementsFromBankToJunction = 0,
+    .advancementsJunctionToItemSpace = 47,
+    .advancementsItemSpaceToQuestion = 868,
+    .advancementsItemSpaceToCpuDecision = 56,
+    .advancementsCpuDecisionToWatchChosen = 328
+    },
+    //1
+    {
+    .advancementsFromBankToJunction = 0,
+    .advancementsJunctionToItemSpace = 63,
+    .advancementsItemSpaceToQuestion = 868,
+    .advancementsItemSpaceToCpuDecision = 56,
+    .advancementsCpuDecisionToWatchChosen = 328
+    },
+};
+
+#define TOAD_QUESTION 0
+
+#define GREEDY_OPTION 0
+#define MIDDLE_OPTION 1
+#define BOTTOM_OPTION 2
+
+#define CPU_MESSAGE_FAST_OPTION_INDEX_1_FRAMES 116
+#define CPU_MESSAGE_FAST_OPTION_INDEX_2_FRAMES 184
+#define CPU_MESSAGE_FAST_CLOSE_RARE_ITEM_TEXT_FRAMES 108
+
+#define CPU_MESSAGE_NORMAL_OPTION_INDEX_1_FRAMES 196
+#define CPU_MESSAGE_NORMAL_OPTION_INDEX_2_FRAMES 264
+
+#define CPU_MESSAGE_SLOW_OPTION_INDEX_1_FRAMES 336
+#define CPU_MESSAGE_SLOW_OPTION_INDEX_2_FRAMES 404
+
+s32 OptionMiddleIndexes[] = {
+    CPU_MESSAGE_FAST_OPTION_INDEX_1_FRAMES, CPU_MESSAGE_NORMAL_OPTION_INDEX_1_FRAMES, CPU_MESSAGE_SLOW_OPTION_INDEX_1_FRAMES
+};
+
+s32 OptionBottomIndexes[] = {
+    CPU_MESSAGE_FAST_OPTION_INDEX_2_FRAMES, CPU_MESSAGE_NORMAL_OPTION_INDEX_2_FRAMES, CPU_MESSAGE_SLOW_OPTION_INDEX_2_FRAMES
+};
+
+#define RARE_ITEM_WATCH 3
+
+
+s32 callAmountBetweenSpace[] = {6, 11, 16};
+
+s32 messageSpeedsArray0[] = {648, 728, 868};
+
+//advancements that happen during cpu selection on each message speed
+s32 CpuSelectionArray1[] = {116, 196, 336};
+
+s32 CpuSelectionArray2[] = {184, 264, 404};
+
+//advancements that happen before rare item is decided
+s32 CpuSelectionArray3[] = {108, 188, 328};
+
+//advancements during bank visit based on text speed
+s32 CpuSelectionArray4[] = {167, 207, 277};
+
+
+//handles all rng related things starting at decision of item space event
+s32 HandleLogicFromItemSpace(s32 messageSpeed) {
+    //printf("Seed before event: %08lX\n", cur_rng_seed);
+    s32 itemSpaceOutcome = func_800EEF80_102BA0(5.0f);
+    if (itemSpaceOutcome != TOAD_QUESTION) {
+        return 0;
+    }
+
+    //advance rng up to text box based on text speed
+    
+    for (int i = 0; i < messageSpeedsArray0[messageSpeed]; i++) {
+        ADV_SEED(cur_rng_seed);
+    }
+
+    //get random question (advances rng twice)
+    //printf("Seed before question asked: %08lX\n", cur_rng_seed);
+    func_800EEF80_102BA0(5.0f);
+
+    //advance rng through text box popping up
+    for (int i = 0; i < 56; i++) {
+        ADV_SEED(cur_rng_seed);
+    }
+
+    //cpu choosen an option to the question
+    //printf("Seed before chosen index: %08lX\n", cur_rng_seed);
+    s32 cpuChosenIndex = func_800EEF80_102BA0(3);
+    if (cpuChosenIndex == GREEDY_OPTION) {
+        return 0;
+    }
+
+    s32 textBoxFrames;
+    if (cpuChosenIndex == MIDDLE_OPTION) {
+        textBoxFrames = CpuSelectionArray1[messageSpeed];
+    } else if (cpuChosenIndex == BOTTOM_OPTION) {
+        textBoxFrames = CpuSelectionArray2[messageSpeed];
+    } else {
+        //??? code shouldn't get here
+        return 0;
+    }
+
+    //advance rng during cpu decision for option index
+    for (int i = 0; i < textBoxFrames; i++) {
+        ADV_SEED(cur_rng_seed);
+    }
+
+    //what happens based on what cpu answers
+    // seed4 = cur_rng_seed;
+    //printf("Seed before question outcome: %08lX\n", cur_rng_seed);
+    s32 questionOutcome = func_800EEF80_102BA0(10.0f);
+
+    if (cpuChosenIndex == MIDDLE_OPTION) {
+        if (questionOutcome >= 2) {
+            return 0;
+        }
+    }
+
+    if (cpuChosenIndex == BOTTOM_OPTION) {
+        if (questionOutcome >= 3) {
+            return 0;
+        }
+    }
+
+    //cpu got rare item, advance rng for text box
+    for (int i = 0; i < CpuSelectionArray3[messageSpeed]; i++) {
+        ADV_SEED(cur_rng_seed);
+    }
+
+    //printf("Seed before rand item chosen: %08lX\n", cur_rng_seed);
+    s32 itemChosen = func_800EEF80_102BA0(4);
+    if (itemChosen == RARE_ITEM_WATCH) {
+        return 1;
+    }
+    return 0;
+    
+}
+
+//FastFast base 37 + (callAmountBetweenSpace[speed] * rollIndex)
+//NormalNormal base 42 + (callAmountBetweenSpace[speed] * rollIndex)
+//SlowSlow base 47 + (callAmountBetweenSpace[speed] * rollIndex)
+
+//FastFast 648
+//NormalNormal 728
+//SlowSlow 868
+//140
+
+//FastFast Bank takes 167 advances
+
+s32 DoCpuLogicTurnv2(s32 rollIndex, s32 walkSpeed, s32 messageSpeed) {
+    u32 advancements = 0;
+    s32 ret = 0;
+    int j = 0;
+    int k = 0;
+    switch(rollIndex) {
+        case 8:
+        case 7:
+        case 6:
+        case 5:
+        case 4:
+            //walk to bank
+            //printf("Seed after roll: %08lX\n", cur_rng_seed);
+            j = 28 + (callAmountBetweenSpace[walkSpeed] * (rollIndex - 3));
+
+            for (int i = 0; i < j; i++) {
+                ADV_SEED(cur_rng_seed);
+            }   
+
+            //time at bank
+            for (int i = 0; i < CpuSelectionArray4[messageSpeed]; i++) { //fastest text time
+                ADV_SEED(cur_rng_seed);
+            }
+
+        case 3:
+        case 2:
+            //advance rng up to function
+            if (rollIndex > 3) {
+                j = (callAmountBetweenSpace[walkSpeed] * 2);
+            } else {
+                j = 28 + (callAmountBetweenSpace[walkSpeed] * (rollIndex - 1));
+            }
+            
+            //printf("j is : %d\n", j);
+            for (int i = 0; i < j; i++) {
+                ADV_SEED(cur_rng_seed);
+            }    
+            //cpu decides direction
+            //printf("Seed Before Cpu Decision: %08lX\n", cur_rng_seed);
+            if (RNGPercentChance(50) == 0) { //CPU went up
+                return 0;
+            }
+            //cpu decision time
+            for (int i = 0; i < 50; i++) {
+                ADV_SEED(cur_rng_seed);
+            }
+
+        //after junction
+        case 1:
+        case 0:
+            //advance rng up to item space event decision
+            if (rollIndex > 1) {
+                k = (callAmountBetweenSpace[walkSpeed] * 3);
+            } else {
+                //k = 37 + (walkSpeed * 5);
+                k = 31 + callAmountBetweenSpace[walkSpeed] * (rollIndex + 1);
+            }
+            
+            //printf("k is : %d\n", k);
+            for (int i = 0; i < k; i++) {
+                ADV_SEED(cur_rng_seed);
+            }
+            //printf("Seed Before Item Space Event: %08lX\n", cur_rng_seed);
+            ret = HandleLogicFromItemSpace(messageSpeed);
+            break;
+    }
+    return ret;
+}
+
+// s32 DoCpuLogicTurnv2(s32 rollIndex, s32 speed) {
+//     u32 advancements = 0;
+//     s32 ret = 0;
+//     int j = 0;
+//     int k = 0;
+//     switch(rollIndex) {
+//         case 8:
+//         case 7:
+//         case 6:
+//         case 5:
+//         case 4:
+//             //stuff here
+//             //TEMPORARY
+//             return 0;
+//         case 3:
+//         case 2:
+//             //advance rng up to function
+//             j = 37 + callAmountBetweenSpace[speed] * rollIndex + 1;
+//             printf("j is : %d\n", j);
+//             for (int i = 0; i < j; i++) {
+//                 ADV_SEED(cur_rng_seed);
+//             }    
+//             //cpu decides direction
+//             if (RNGPercentChance(50) == 0) { //CPU went up
+//                 return 0;
+//             }
+//         //after junction
+//         case 1:
+//         case 0:
+//             //advance rng up to item space event decision
+//             k = 37 + (speed * 5);
+//             //printf("k is : %d\n", k);
+//             for (int i = 0; i < k; i++) {
+//                 ADV_SEED(cur_rng_seed);
+//             }
+//             ret = HandleLogicFromItemSpace(speed);
+//             break;
+//     }
+//     return ret;
+// }
+
+// s32 DoCpuLogicTurnv2(s32 rollIndex, s32 speed) {
+//     u32 advancements = 0;
+//     s32 ret = 0;
+//     switch(rollIndex) {
+//         //after junction
+//         case 0:
+//         case 1:
+//             //advance rng up to item space event decision
+//             for (int i = 0; i < (37 + speed * 5); i++) {
+//                 ADV_SEED(cur_rng_seed);
+//             }
+//             ret = HandleLogicFromItemSpace(speed);
+//             break;
+//         //before junction, after bank space
+//         case 2:
+//         case 3:
+//             //advance rng up to function
+//             for (int i = 0; i < (28 + callAmountBetweenSpace[speed]); i++) {
+//                 ADV_SEED(cur_rng_seed);
+//             }    
+//             //cpu decides direction
+//             if (RNGPercentChance(50) == 0) { //CPU went up
+//                 return 0;
+//             } 
+//             //advance rng up to item space event decision
+//             for (int i = 0; i < (37 + speed * 5); i++) {
+//                 ADV_SEED(cur_rng_seed);
+//             }
+//             ret = HandleLogicFromItemSpace(speed);
+//             break;
+//             break;
+//         //before junction, before bank space
+//         case 4:
+//         case 5:
+//         case 6:
+//         case 7:
+//         case 8:
+//             ret = 0;
+//             break;
+//     }
+//     return ret;
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+s32 DoCpuLogicTurn(s32 rollIndex, s32 speed) {
+    //u32 seed1, seed2, seed3, seed4, seed5;
+    CpuWalkStats* curCpuTiming = &FastFast[rollIndex];
+    // CpuWalkStats* curCpuTiming = &NormalNormal[rollIndex];
+    //CpuWalkStats* curCpuTiming = &SlowSlow[rollIndex];
+
+    for (int i = 0; i < curCpuTiming->advancementsFromBankToJunction; i++) {
+        ADV_SEED(cur_rng_seed);
+    } 
+
+    if (curCpuTiming->advancementsFromBankToJunction != 0) {
+        if (RNGPercentChance(50) == 0) { //CPU went up
+            return 0;
+        }
+    }
+
+    //advance rng until item space event decision
+    for (int i = 0; i < curCpuTiming->advancementsJunctionToItemSpace; i++) {
+        ADV_SEED(cur_rng_seed);
+    }
+
+    //determine item space event (toad question, baby bowser question, or minigame)
+    // seed1 = cur_rng_seed;
+    s32 itemSpaceOutcome = func_800EEF80_102BA0(5.0f);
+    if (itemSpaceOutcome != TOAD_QUESTION) {
+        return 0;
+    }
+
+    for (int i = 0; i < curCpuTiming->advancementsItemSpaceToQuestion; i++) {
+        ADV_SEED(cur_rng_seed);
+    }
+
+    //doesn't actually matter, just needed to advance rng
+    //(add 2 to below loop iteration to optimize program and remove this line)
+    // seed2 = cur_rng_seed;
+    //s32 questionAsked = func_800EEF80_102BA0(5.0f);
+
+    for (int i = 0; i < curCpuTiming->advancementsItemSpaceToCpuDecision + 2; i++) {
+        ADV_SEED(cur_rng_seed);
+    }
+
+    //cpu chooses answer to question
+    // seed3 = cur_rng_seed;
+    s32 cpuChosenIndex = func_800EEF80_102BA0(3);
+
+    if (cpuChosenIndex == GREEDY_OPTION) {
+        return 0;
+    }
+
+    s32 textBoxFrames;
+    if (cpuChosenIndex == MIDDLE_OPTION) {
+        textBoxFrames = OptionMiddleIndexes[speed];
+    } else if (cpuChosenIndex == BOTTOM_OPTION) {
+        textBoxFrames = OptionBottomIndexes[speed];
+    } else {
+        //??? code shouldn't get here
+        return 0;
+    }
+
+    //advance rng during cpu decision for option index
+    for (int i = 0; i < textBoxFrames; i++) {
+        ADV_SEED(cur_rng_seed);
+    }
+
+    //what happens based on what cpu answers
+    // seed4 = cur_rng_seed;
+    s32 questionOutcome = func_800EEF80_102BA0(10.0f);
+
+    if (cpuChosenIndex == MIDDLE_OPTION) {
+        if (questionOutcome >= 2) {
+            return 0;
+        }
+    }
+
+    if (cpuChosenIndex == BOTTOM_OPTION) {
+        if (questionOutcome >= 3) {
+            return 0;
+        }
+    }
+
+    //cpu got rare item, advance rng for text box
+    for (int i = 0; i < curCpuTiming->advancementsCpuDecisionToWatchChosen; i++) {
+        ADV_SEED(cur_rng_seed);
+    }
+
+    //decide random rare item
+    // seed5 = cur_rng_seed;
+    s32 itemChosen = func_800EEF80_102BA0(4);
+    if (itemChosen == RARE_ITEM_WATCH) {
+        return 1;
+    }
+    return 0;
+}
+
+// void DoCpuLogicJunctionOnly(void) {
+
+// }
+
+// void DoCpuLogicBankAndJunction(void) {
+
+// }
+
+#define FAST_TEXT 0
+#define NORMAL_TEXT 1
+#define SLOW_TEXT 2
+
+#define FAST_WALK 0
+#define NORMAL_WALK 1
+#define SLOW_WALK 2
+
+char* speedsText[] = {
+    "FAST",
+    "NORMAL",
+    "SLOW",
+};
+
+void CPUGetWatchFromItemSpace2(s32 rollValue, s32 walkSpeedIndex, s32 messageSpeedIndex) {
+    u32 prevSeed = cur_rng_seed;
+    //204 calls from A press on cannon to cpu roll
+    for (u32 i = 0; i < 10000; i++) {
+        //printf("CurSeed: %08lX\n", cur_rng_seed);
+        cur_rng_seed = prevSeed;
+        u32 seedTemp = cur_rng_seed;
+
+        // for (int i = 0; i < 205; i++) {
+        //     ADV_SEED(cur_rng_seed);
+        // }
+        
+        s32 roll = rollDice(); //before roll dice
+        
+        prevSeed = cur_rng_seed;
+
+        if (rollValue != 0) {
+            if (roll != rollValue) {
+                continue;
+            }
+        }
+
+        if (DoCpuLogicTurnv2(roll - 1, FAST_WALK, FAST_TEXT) == 1) {
+            printf("Calls: %ld, Seed: %08lX, Roll: %ld \t| Walk: %s \t| Message: %s\n", i, seedTemp, roll, speedsText[FAST_WALK], speedsText[FAST_TEXT]);
+        }
+        cur_rng_seed = prevSeed;
+
+        if (DoCpuLogicTurnv2(roll - 1, FAST_WALK, NORMAL_TEXT) == 1) {
+            printf("Calls: %ld, Seed: %08lX, Roll: %ld \t| Walk: %s \t| Message: %s\n", i, seedTemp, roll, speedsText[FAST_WALK], speedsText[NORMAL_TEXT]);
+        }
+        cur_rng_seed = prevSeed;
+
+        if (DoCpuLogicTurnv2(roll - 1, FAST_WALK, SLOW_TEXT) == 1) {
+            printf("Calls: %ld, Seed: %08lX, Roll: %ld \t| Walk: %s \t| Message: %s\n", i, seedTemp, roll, speedsText[FAST_WALK], speedsText[SLOW_TEXT]);
+        }
+        cur_rng_seed = prevSeed;
+
+        if (DoCpuLogicTurnv2(roll - 1, NORMAL_WALK, FAST_TEXT) == 1) {
+            printf("Calls: %ld, Seed: %08lX, Roll: %ld \t| Walk: %s \t| Message: %s\n", i, seedTemp, roll, speedsText[NORMAL_WALK], speedsText[FAST_TEXT]);
+        }
+        cur_rng_seed = prevSeed;
+
+        if (DoCpuLogicTurnv2(roll - 1, NORMAL_WALK, NORMAL_TEXT) == 1) {
+            printf("Calls: %ld, Seed: %08lX, Roll: %ld \t| Walk: %s \t| Message: %s\n", i, seedTemp, roll, speedsText[NORMAL_WALK], speedsText[NORMAL_TEXT]);
+        }
+        cur_rng_seed = prevSeed;
+
+        if (DoCpuLogicTurnv2(roll - 1, NORMAL_WALK, SLOW_TEXT) == 1) {
+            printf("Calls: %ld, Seed: %08lX, Roll: %ld \t| Walk: %s \t| Message: %s\n", i, seedTemp, roll, speedsText[NORMAL_WALK], speedsText[SLOW_TEXT]);
+        }
+        cur_rng_seed = prevSeed;
+
+        if (DoCpuLogicTurnv2(roll - 1, SLOW_WALK, FAST_TEXT) == 1) {
+            printf("Calls: %ld, Seed: %08lX, Roll: %ld \t| Walk: %s \t| Message: %s\n", i, seedTemp, roll, speedsText[SLOW_WALK], speedsText[FAST_TEXT]);
+        }
+        cur_rng_seed = prevSeed;
+
+        if (DoCpuLogicTurnv2(roll - 1, SLOW_WALK, NORMAL_TEXT) == 1) {
+            printf("Calls: %ld, Seed: %08lX, Roll: %ld \t| Walk: %s \t| Message: %s\n", i, seedTemp, roll, speedsText[SLOW_WALK], speedsText[NORMAL_TEXT]);
+        }
+        cur_rng_seed = prevSeed;
+
+        if (DoCpuLogicTurnv2(roll - 1, SLOW_WALK, SLOW_TEXT) == 1) {
+            printf("Calls: %ld, Seed: %08lX, Roll: %ld \t| Walk: %s \t| Message: %s\n", i, seedTemp, roll, speedsText[SLOW_WALK], speedsText[SLOW_TEXT]);
+        }
+        cur_rng_seed = prevSeed;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void CPUGetWatchFromItemSpace(s32 rollValue) {
     u32 prevSeed = cur_rng_seed;
@@ -413,25 +1177,25 @@ void CPUGetWatchFromItemSpace(s32 rollValue) {
             continue;
         }
 
-        if (FramesToWalkToItemSpace[roll].cpuWeight == 0) {
-            for (s32 j = 0; j < FramesToWalkToItemSpace[roll].firstHalf; j++) {
+        if (FramesToWalkToItemSpaceNormalWalkNormalMessage[roll].cpuWeight == -1) {
+            for (s32 j = 0; j < FramesToWalkToItemSpaceNormalWalkNormalMessage[roll].firstHalf; j++) {
                 ADV_SEED(cur_rng_seed);
             }
         } else {
-            for (s32 j = 0; j < FramesToWalkToItemSpace[roll].firstHalf; j++) {
+            for (s32 j = 0; j < FramesToWalkToItemSpaceNormalWalkNormalMessage[roll].firstHalf; j++) {
                 ADV_SEED(cur_rng_seed);
             }
-            u8 cpuDecision = RNGPercentChance(FramesToWalkToItemSpace[roll].cpuWeight);
-            if (cpuDecision != FramesToWalkToItemSpace[roll].decisionWanted) {
+            u8 cpuDecision = RNGPercentChance(FramesToWalkToItemSpaceNormalWalkNormalMessage[roll].cpuWeight);
+            if (cpuDecision != FramesToWalkToItemSpaceNormalWalkNormalMessage[roll].decisionWanted) {
                 continue;
             }
-            for (s32 j = 0; j < FramesToWalkToItemSpace[roll].secondHalf; j++) {
+            for (s32 j = 0; j < FramesToWalkToItemSpaceNormalWalkNormalMessage[roll].secondHalf; j++) {
                 ADV_SEED(cur_rng_seed);
             }
         }
 
         s32 itemSpaceOutcome = func_800EEF80_102BA0(5.0f);
-        if (itemSpaceOutcome != 0) { //is toad question
+        if (itemSpaceOutcome != 0) { //if isn't toad question, continue loop
             continue;
         }
 
@@ -439,11 +1203,10 @@ void CPUGetWatchFromItemSpace(s32 rollValue) {
             ADV_SEED(cur_rng_seed);
         }
 
-        s32 questionAsked = func_800EEF80_102BA0(5.0f);
-        //previously, i thought a specific toad question was required. It is not!
-        // if (questionAsked != 2) {
-        //     continue;
-        // }
+        //doesn't actually matter, just needed to advance rng
+        //s32 questionAsked = func_800EEF80_102BA0(5.0f);
+        HuGetRandomByte();
+        HuGetRandomByte();
 
         for (s32 j = 0; j < 56; j++) {
             ADV_SEED(cur_rng_seed);
@@ -506,7 +1269,27 @@ void PrintArgUsage(void) {
     //printf("Arg stuff\n");
 }
 
+void tempFunction(void) {
+    for (s32 i = 0; i < 3000; i++) {
+        u32 prevSeed = cur_rng_seed;
+        u8 diceRollValue = rollDice();
+        // if (diceRollValue != 8) {
+        //     continue;
+        // }
+        printf("Calls: %ld, Seed: %08lX Rolls: %d\n", i, prevSeed, diceRollValue);
+    }
+}
+
 int main(int argc, char *argv[]) {
+
+    // CPUGetWatchFromItemSpace2(1, 0, 0); //fast fast
+    // return 0;
+
+    if (strncmp("--temp", argv[1], sizeof("--temp")) == 0) {
+        tempFunction();
+        return 0;
+    }
+
     //printf(ANSI_GREEN"MP3 rng util\n"ANSI_RESET);
     if (argc == 1 || strncmp("--options", argv[1], sizeof("--options")) == 0) {
         PrintArgUsage();
@@ -638,19 +1421,21 @@ int main(int argc, char *argv[]) {
     }
 
     if (strncmp("--cpuitemspacewatch", argv[1], sizeof("--cpuitemspacewatch")) == 0) {
-        if (argc != 3) {
-            printf("Usage: %s --cpuitemspacewatch <value>\n", argv[0]);
-            return 0;
-        }
         u32 hexValue;
-        char* arg2Temp = argv[2];
-        if (arg2Temp[0] == '0') {
-            if (arg2Temp[1] == 'x' || arg2Temp[1] == 'X') {
-                arg2Temp += 2;
+        if (argc == 2) {
+            hexValue = 0;
+            //printf("Usage: %s --cpuitemspacewatch <roll_value>\n", argv[0]);
+            //return 0;
+        } else {
+            char* arg2Temp = argv[2];
+            if (arg2Temp[0] == '0') {
+                if (arg2Temp[1] == 'x' || arg2Temp[1] == 'X') {
+                    arg2Temp += 2;
+                }
             }
+            sscanf(arg2Temp, "%08lX", &hexValue);
         }
-        sscanf(arg2Temp, "%08lX", &hexValue);
-        CPUGetWatchFromItemSpace(hexValue);
+        CPUGetWatchFromItemSpace2(hexValue, 0, 0); //fast fast
     }
 
     //pthread_t threads[NUM_THREADS];
