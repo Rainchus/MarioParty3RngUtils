@@ -29,6 +29,12 @@ typedef struct SpaceData {
 /* 0x20 */ void* event_list;
 } SpaceData;
 
+typedef struct Blocks {
+    s16 coinBlockSpaceIndex;
+    s16 starBlockSpaceIndex;
+    s16 itemBlockSpaceIndex;
+} Blocks;
+
 extern SpaceData spaces[];
 extern u32 cur_rng_seed;
 
@@ -37,4 +43,13 @@ extern u32 cur_rng_seed;
 u8 rollDice(void);
 u8 RNGPercentChance(s8 arg0);
 s32 func_800EEF80_102BA0(f32 arg0);
+s32 MeasureRngCalls(u32 seedStart, u32 seedEnd);
+SpaceData* func_800EB160_FED80(s16 arg0);
+void func_800FC594_1101B4(Blocks* blocks);
+s16 func_800EBCD4_FF8F4(u8 arg0);
+s32 func_80035F98_36B98(s32 input);
+void hidden_block_gen_main(void);
+s32 DoCpuLogicGeneric(s32 rollIndex, s32 walkSpeed, s32 messageSpeed);
+void CPUGetWatchGeneric(s32 rollValue);
+
 #endif

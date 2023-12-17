@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include "../include/mp1.h"
+#include "../include/mp3.h"
 
 //1
 char PowerUpString[] = "Power Up";
@@ -39,20 +39,15 @@ s32 DecidePlayerOrder(void) {
 
 void SimDuelMode3(void) {
     for (u32 i = 0; i < 100000; i++) {
-        u32 chain = 0;
-        u32 prevRequirements = 0;
         u32 startSeed = cur_rng_seed;
         u8 diceRoll1 = rollDice();
 
         if (diceRoll1 != 9) {
             cur_rng_seed = startSeed;
             ADV_SEED(cur_rng_seed);
-            prevRequirements = 0;
-            chain = 0;
             continue;
         }
     }
-
 }
 
 void SimDuelMode2(void) {
@@ -219,7 +214,7 @@ void SimDuelMode(void) {
         } else {
             if (chain >= 3) {
                 if (prevPlayerOrder != 0) {
-                    printf("Chain for %d, length %d, Iterations %d, Seed: %08lX\n", prevPlayerOrder, chain, i - chain, seedChainStart);
+                    printf("Chain for %ld, length %ld, Iterations %ld, Seed: %08lX\n", prevPlayerOrder, chain, i - chain, seedChainStart);
                 }
                 
             }
