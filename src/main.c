@@ -18,9 +18,9 @@ void SimDuelMode(void);
 void SimDuelMode2(void);
 void SimDuelMode3(void);
 void CPUGetWatchChillyWaters(s32 rollValue, u32 numOfJumps);
-void CPUGetWatchSpinyDesert(s32 rollValue, u32 numOfJumps);
+void CPUGetWatchSpinyDesert(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction);
 void CPUGetWatchWoodyWoods(s32 rollValue, u32 numOfJumps);
-void CPUGetWatchDeepBlooperSea(s32 rollValue, u32 numOfJumps);
+void CPUGetWatchDeepBlooperSea(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction);
 void cpu_item_space_watch_deep_blooper_sea(int argc, char* argv[]);
 void cpu_item_space_watch_chilly_waters(int argc, char* argv[]);
 void cpu_item_space_watch_spiny_desert(int argc, char* argv[]);
@@ -216,31 +216,26 @@ char* ParseStringIfHex(char* string) {
 }
 
 void cpu_item_space_watch_generic(int argc, char* argv[]) {
-    u32 rollValue;
-    u32 numOfJumps;
+    s32 rollValue = 0;
+    s32 jumps = 0;
 
-    if (argc == 2) {
-        rollValue = 0;
-        printf("numOfJumps not set! assuming none\n");
-        numOfJumps = 0;
-    } else if (argc == 3) {
-        char* buffer = ParseStringIfHex(argv[2]);
-        sscanf(buffer, "%08lX", &rollValue);
-        printf("numOfJumps not set! assuming none\n");
-        numOfJumps = 0;   
-    } else if (argc == 4) {
-        char* buffer = ParseStringIfHex(argv[2]);
-        sscanf(buffer, "%08lX", &rollValue);
-
-        char* buffer2 = ParseStringIfHex(argv[3]);
-        sscanf(buffer2, "%08lX", &numOfJumps);
-
-        if (numOfJumps >= 4) {
-            printf("numOfJumps too high! Defaulting to 3\n");
-            numOfJumps = 3;
-        }     
+    switch (argc) {
+        case 4:
+            sscanf(argv[3], "%ld", &jumps);
+            if (jumps > 10 || jumps < 0) {
+                printf("Invalid value passed for jumps\n");
+                return;
+            } 
+        case 3:
+            sscanf(argv[2], "%ld", &rollValue);
+            if (rollValue > 10 || rollValue < 0) {
+                printf("Invalid value passed for rollValue\n");
+                return;
+            }
     }
-    CPUGetWatchGeneric(rollValue, numOfJumps);
+
+    printf("rollValue: %ld, jumps: %ld\n", rollValue, jumps);
+    CPUGetWatchGeneric(rollValue, jumps);
 }
 
 void cpu_item_space_watch_chilly_waters(int argc, char* argv[]) {
@@ -271,58 +266,107 @@ void cpu_item_space_watch_chilly_waters(int argc, char* argv[]) {
 }
 
 void cpu_item_space_watch_deep_blooper_sea(int argc, char* argv[]) {
-    u32 rollValue;
-    u32 numOfJumps;
+    s32 rollValue = 0;
+    s32 jumpsBeforeJunction = 0;
+    s32 jumpsAfterJunction = 0;
 
-    if (argc == 2) {
-        rollValue = 0;
-        printf("numOfJumps not set! assuming none\n");
-        numOfJumps = 0;
-    } else if (argc == 3) {
-        char* buffer = ParseStringIfHex(argv[2]);
-        sscanf(buffer, "%08lX", &rollValue);
-        printf("numOfJumps not set! assuming none\n");
-        numOfJumps = 0;   
-    } else if (argc == 4) {
-        char* buffer = ParseStringIfHex(argv[2]);
-        sscanf(buffer, "%08lX", &rollValue);
-
-        char* buffer2 = ParseStringIfHex(argv[3]);
-        sscanf(buffer2, "%08lX", &numOfJumps);
-        if (numOfJumps >= 4) {
-            printf("numOfJumps too high! Defaulting to 3\n");
-            numOfJumps = 3;
-        }     
+    switch (argc) {
+        case 5:
+            sscanf(argv[4], "%ld", &jumpsAfterJunction);
+            if (jumpsAfterJunction > 10 || jumpsAfterJunction < 0) {
+                printf("Invalid value passed for jumpsAfterJunction\n");
+                return;
+            } 
+        case 4:
+            sscanf(argv[3], "%ld", &jumpsBeforeJunction);
+            if (jumpsBeforeJunction > 10 || jumpsBeforeJunction < 0) {
+                printf("Invalid value passed for jumpsBeforeJunction\n");
+                return;
+            } 
+        case 3:
+            sscanf(argv[2], "%ld", &rollValue);
+            if (rollValue > 10 || rollValue < 0) {
+                printf("Invalid value passed for rollValue\n");
+                return;
+            }
     }
-    CPUGetWatchDeepBlooperSea(rollValue, numOfJumps);
+
+    printf("rollValue: %ld, jumpsBefore: %ld, jumpsAfter: %ld\n", rollValue, jumpsBeforeJunction, jumpsAfterJunction);
+    CPUGetWatchDeepBlooperSea(rollValue, jumpsBeforeJunction, jumpsAfterJunction);
 }
 
 void cpu_item_space_watch_spiny_desert(int argc, char* argv[]) {
-    u32 rollValue;
-    u32 numOfJumps;
+    s32 rollValue = 0;
+    s32 jumpsBeforeJunction = 0;
+    s32 jumpsAfterJunction = 0;
 
-    if (argc == 2) {
-        rollValue = 0;
-        printf("numOfJumps not set! assuming none\n");
-        numOfJumps = 0;
-    } else if (argc == 3) {
-        char* buffer = ParseStringIfHex(argv[2]);
-        sscanf(buffer, "%08lX", &rollValue);
-        printf("numOfJumps not set! assuming none\n");
-        numOfJumps = 0;   
-    } else if (argc == 4) {
-        char* buffer = ParseStringIfHex(argv[2]);
-        sscanf(buffer, "%08lX", &rollValue);
-
-        char* buffer2 = ParseStringIfHex(argv[3]);
-        sscanf(buffer2, "%08lX", &numOfJumps);
-        if (numOfJumps >= 4) {
-            printf("numOfJumps too high! Defaulting to 3\n");
-            numOfJumps = 3;
-        }     
+    switch (argc) {
+        case 5:
+            sscanf(argv[4], "%ld", &jumpsAfterJunction);
+            if (jumpsAfterJunction > 10 || jumpsAfterJunction < 0) {
+                printf("Invalid value passed for jumpsAfterJunction\n");
+                return;
+            } 
+        case 4:
+            sscanf(argv[3], "%ld", &jumpsBeforeJunction);
+            if (jumpsBeforeJunction > 10 || jumpsBeforeJunction < 0) {
+                printf("Invalid value passed for jumpsBeforeJunction\n");
+                return;
+            } 
+        case 3:
+            sscanf(argv[2], "%ld", &rollValue);
+            if (rollValue > 10 || rollValue < 0) {
+                printf("Invalid value passed for rollValue\n");
+                return;
+            }
     }
 
-    CPUGetWatchSpinyDesert(rollValue, numOfJumps);
+    printf("rollValue: %ld, jumpsBefore: %ld, jumpsAfter: %ld\n", rollValue, jumpsBeforeJunction, jumpsAfterJunction);
+    CPUGetWatchSpinyDesert(rollValue, jumpsBeforeJunction, jumpsAfterJunction);
+
+    // if (argc == 2) {
+    //     rollValue = 0;
+    //     jumpsBeforeJunction = 0;
+    //     jumpsAfterJunction = 0;
+    //     printf("Jumps not set! Assuming zero for both\n");       
+    // } else if (argc == 3) {
+    //     jumpsBeforeJunction = 0;
+    //     jumpsAfterJunction = 0;
+    //     printf("Jumps not set! Assuming zero for both\n"); 
+    //     sscanf(argv[3], "%d", &rollValue);
+
+    //     if (rollValue > 10 || rollValue < 0) {
+    //         printf("Invalid value passed for jumpsBeforeJunction\n");
+    //         return;
+    //     }
+    // } else if (argc == 4) {
+
+    // }
+
+    // ./mp3_rng_util.exe --cpu_watch_spiny_desert roll, jumpsBeforeJunction, jumpsAfterJunction
+
+    // if (argc == 2) {
+    //     rollValue = 0;
+    //     printf("numOfJumps not set! assuming none\n");
+    //     numOfJumps = 0;
+    // } else if (argc == 3) {
+    //     char* buffer = ParseStringIfHex(argv[2]);
+    //     sscanf(buffer, "%08lX", &rollValue);
+    //     printf("numOfJumps not set! assuming none\n");
+    //     numOfJumps = 0;   
+    // } else if (argc == 4) {
+    //     char* buffer = ParseStringIfHex(argv[2]);
+    //     sscanf(buffer, "%08lX", &rollValue);
+
+    //     char* buffer2 = ParseStringIfHex(argv[3]);
+    //     sscanf(buffer2, "%08lX", &numOfJumps);
+    //     if (numOfJumps >= 4) {
+    //         printf("numOfJumps too high! Defaulting to 3\n");
+    //         numOfJumps = 3;
+    //     }     
+    // }
+
+    // CPUGetWatchSpinyDesert(rollValue, numOfJumps);
 }
 
 void cpu_item_space_watch_woody_woods(int argc, char* argv[]) {
