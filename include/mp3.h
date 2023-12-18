@@ -49,7 +49,7 @@ void func_800FC594_1101B4(Blocks* blocks);
 s16 func_800EBCD4_FF8F4(u8 arg0);
 s32 func_80035F98_36B98(s32 input);
 void hidden_block_gen_main(void);
-s32 DoCpuLogicGeneric(s32 rollIndex, s32 walkSpeed, s32 messageSpeed);
-void CPUGetWatchGeneric(s32 rollValue);
+s32 DoCpuLogicGeneric(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, u32 numOfJumps);
+void CPUGetWatchGeneric(s32 rollValue, u32 numOfJumps);
 
 #endif

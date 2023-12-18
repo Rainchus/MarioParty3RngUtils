@@ -17,20 +17,65 @@ void hiddenblockgen(int argc, char *argv[]);
 void SimDuelMode(void);
 void SimDuelMode2(void);
 void SimDuelMode3(void);
-void CPUGetWatchChillyWaters(s32 rollValue);
+void CPUGetWatchChillyWaters(s32 rollValue, u32 numOfJumps);
+void CPUGetWatchSpinyDesert(s32 rollValue, u32 numOfJumps);
+void CPUGetWatchWoodyWoods(s32 rollValue, u32 numOfJumps);
+void CPUGetWatchDeepBlooperSea(s32 rollValue, u32 numOfJumps);
 void cpu_item_space_watch_deep_blooper_sea(int argc, char* argv[]);
 void cpu_item_space_watch_chilly_waters(int argc, char* argv[]);
+void cpu_item_space_watch_spiny_desert(int argc, char* argv[]);
+void cpu_item_space_watch_woody_woods(int argc, char* argv[]);
 void cpu_item_space_watch_generic(int argc, char* argv[]);
-void CPUGetWatchDeepBlooperSea(s32 rollValue);
+void hidden_block_gen_main(void);
 
+void tempFunction(char *argv[]) {
+    char* hexValue1 = argv[2];
+
+    if (hexValue1[0] == '0') {
+        if (hexValue1[1] == 'x' || hexValue1[1] == 'X'){ 
+            hexValue1 += 2; //iterate over prefix
+        }
+    }
+    
+    int res2 = atoi(hexValue1);
+    for (s32 i = 0; i < 3000; i++) {
+        u32 prevSeed = cur_rng_seed;
+        u8 diceRollValue = rollDice();
+        if (i < 800) {
+            continue;
+        }
+
+        if (res2 != 0) {
+            if (diceRollValue != res2) {
+                continue;
+            }
+        }
+
+        printf("Calls: %ld, Seed: %08lX Rolls: %d\n", i, prevSeed, diceRollValue);
+    }
+}
 
 int main(int argc, char *argv[]) {
-    // Check if there are command-line arguments
-    if (argc < 2) {
-        printf("Usage: %s <argument>\n", argv[0]);
-        return 1;
+    if (argc == 1) {
+        printf(
+        "Args:\n"
+        "--simduel\n"
+        "--simduel2\n"
+        "--simduel3\n"
+        "--rngadv\n"
+        "--roll_chain\n"
+        "--cpu_watch_chilly_waters\n"
+        "--cpu_watch_deep_blooper_sea\n"
+        "--cpu_watch_generic\n"
+        "--hiddenblockgen\n"
+        );
+        return 0;
     }
 
+    if (strncmp("--temp", argv[1], sizeof("--temp")) == 0) {
+        tempFunction(argv);
+        return 0;
+    }
     // Loop through the command-line arguments
     for (int i = 1; i < argc; i++) {
         // Check the argument and call the corresponding function
@@ -46,7 +91,7 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(argv[i], "--rngadv") == 0) {
             rngadv(argc, argv);
             return 0;
-        } else if (strcmp(argv[i], "--rollchain") == 0) {
+        } else if (strcmp(argv[i], "--roll_chain") == 0) {
             rollchain(argc, argv);
             return 0;
         } else if (strcmp(argv[i], "--cpu_watch_chilly_waters") == 0) {
@@ -54,6 +99,12 @@ int main(int argc, char *argv[]) {
             return 0;
         } else if (strcmp(argv[i], "--cpu_watch_deep_blooper_sea") == 0) {
             cpu_item_space_watch_deep_blooper_sea(argc, argv);
+            return 0;
+        } else if (strcmp(argv[i], "--cpu_watch_spiny_desert") == 0) {
+            cpu_item_space_watch_spiny_desert(argc, argv);
+            return 0;
+        } else if (strcmp(argv[i], "--cpu_watch_woody_woods") == 0) {
+            cpu_item_space_watch_woody_woods(argc, argv);
             return 0;
         } else if (strcmp(argv[i], "--cpu_watch_generic") == 0) {
             cpu_item_space_watch_generic(argc, argv);
@@ -144,7 +195,7 @@ void rollchain(int argc, char* argv[]) {
             chain++;
         } else {
             if (chain >= chain_bound) {
-                printf("Chain for %ld, length %ld, Iterations %ld, Seed: %08lX\n", prevDiceRoll, chain, i - chain, seedChainStart);
+                printf("Roll %ld, length: %ld, Calls: %ld, Seed: %08lX\n", prevDiceRoll, chain, i - chain, seedChainStart);
             }
             chain = 0;
         }
@@ -165,36 +216,140 @@ char* ParseStringIfHex(char* string) {
 }
 
 void cpu_item_space_watch_generic(int argc, char* argv[]) {
-    u32 hexValue;
+    u32 rollValue;
+    u32 numOfJumps;
+
     if (argc == 2) {
-        hexValue = 0;
-    } else {
+        rollValue = 0;
+        printf("numOfJumps not set! assuming none\n");
+        numOfJumps = 0;
+    } else if (argc == 3) {
         char* buffer = ParseStringIfHex(argv[2]);
-        sscanf(buffer, "%08lX", &hexValue);
+        sscanf(buffer, "%08lX", &rollValue);
+        printf("numOfJumps not set! assuming none\n");
+        numOfJumps = 0;   
+    } else if (argc == 4) {
+        char* buffer = ParseStringIfHex(argv[2]);
+        sscanf(buffer, "%08lX", &rollValue);
+
+        char* buffer2 = ParseStringIfHex(argv[3]);
+        sscanf(buffer2, "%08lX", &numOfJumps);
+
+        if (numOfJumps >= 4) {
+            printf("numOfJumps too high! Defaulting to 3\n");
+            numOfJumps = 3;
+        }     
     }
-    CPUGetWatchGeneric(hexValue);
+    CPUGetWatchGeneric(rollValue, numOfJumps);
 }
 
 void cpu_item_space_watch_chilly_waters(int argc, char* argv[]) {
-    u32 hexValue;
+    u32 rollValue;
+    u32 numOfJumps;
+
     if (argc == 2) {
-        hexValue = 0;
-    } else {
+        rollValue = 0;
+        printf("numOfJumps not set! assuming none\n");
+        numOfJumps = 0;
+    } else if (argc == 3) {
         char* buffer = ParseStringIfHex(argv[2]);
-        sscanf(buffer, "%08lX", &hexValue);
+        sscanf(buffer, "%08lX", &rollValue);
+        printf("numOfJumps not set! assuming none\n");
+        numOfJumps = 0;   
+    } else if (argc == 4) {
+        char* buffer = ParseStringIfHex(argv[2]);
+        sscanf(buffer, "%08lX", &rollValue);
+
+        char* buffer2 = ParseStringIfHex(argv[3]);
+        sscanf(buffer2, "%08lX", &numOfJumps);
+        if (numOfJumps >= 4) {
+            printf("numOfJumps too high! Defaulting to 3\n");
+            numOfJumps = 3;
+        }     
     }
-    CPUGetWatchChillyWaters(hexValue);
+    CPUGetWatchChillyWaters(rollValue, numOfJumps);
 }
 
 void cpu_item_space_watch_deep_blooper_sea(int argc, char* argv[]) {
-    u32 hexValue;
+    u32 rollValue;
+    u32 numOfJumps;
+
     if (argc == 2) {
-        hexValue = 0;
-    } else {
+        rollValue = 0;
+        printf("numOfJumps not set! assuming none\n");
+        numOfJumps = 0;
+    } else if (argc == 3) {
         char* buffer = ParseStringIfHex(argv[2]);
-        sscanf(buffer, "%08lX", &hexValue);
+        sscanf(buffer, "%08lX", &rollValue);
+        printf("numOfJumps not set! assuming none\n");
+        numOfJumps = 0;   
+    } else if (argc == 4) {
+        char* buffer = ParseStringIfHex(argv[2]);
+        sscanf(buffer, "%08lX", &rollValue);
+
+        char* buffer2 = ParseStringIfHex(argv[3]);
+        sscanf(buffer2, "%08lX", &numOfJumps);
+        if (numOfJumps >= 4) {
+            printf("numOfJumps too high! Defaulting to 3\n");
+            numOfJumps = 3;
+        }     
     }
-    CPUGetWatchDeepBlooperSea(hexValue);
+    CPUGetWatchDeepBlooperSea(rollValue, numOfJumps);
+}
+
+void cpu_item_space_watch_spiny_desert(int argc, char* argv[]) {
+    u32 rollValue;
+    u32 numOfJumps;
+
+    if (argc == 2) {
+        rollValue = 0;
+        printf("numOfJumps not set! assuming none\n");
+        numOfJumps = 0;
+    } else if (argc == 3) {
+        char* buffer = ParseStringIfHex(argv[2]);
+        sscanf(buffer, "%08lX", &rollValue);
+        printf("numOfJumps not set! assuming none\n");
+        numOfJumps = 0;   
+    } else if (argc == 4) {
+        char* buffer = ParseStringIfHex(argv[2]);
+        sscanf(buffer, "%08lX", &rollValue);
+
+        char* buffer2 = ParseStringIfHex(argv[3]);
+        sscanf(buffer2, "%08lX", &numOfJumps);
+        if (numOfJumps >= 4) {
+            printf("numOfJumps too high! Defaulting to 3\n");
+            numOfJumps = 3;
+        }     
+    }
+
+    CPUGetWatchSpinyDesert(rollValue, numOfJumps);
+}
+
+void cpu_item_space_watch_woody_woods(int argc, char* argv[]) {
+    u32 rollValue;
+    u32 numOfJumps;
+
+    if (argc == 2) {
+        rollValue = 0;
+        printf("numOfJumps not set! assuming none\n");
+        numOfJumps = 0;
+    } else if (argc == 3) {
+        char* buffer = ParseStringIfHex(argv[2]);
+        sscanf(buffer, "%08lX", &rollValue);
+        printf("numOfJumps not set! assuming none\n");
+        numOfJumps = 0;   
+    } else if (argc == 4) {
+        char* buffer = ParseStringIfHex(argv[2]);
+        sscanf(buffer, "%08lX", &rollValue);
+
+        char* buffer2 = ParseStringIfHex(argv[3]);
+        sscanf(buffer2, "%08lX", &numOfJumps);
+        if (numOfJumps >= 4) {
+            printf("numOfJumps too high! Defaulting to 3\n");
+            numOfJumps = 3;
+        }     
+    }
+    CPUGetWatchWoodyWoods(rollValue, numOfJumps);
 }
 
 void hiddenblockgen(int argc, char* argv[]) {

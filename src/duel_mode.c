@@ -102,11 +102,6 @@ void SimDuelMode2(void) {
 
 //we want the CPU to go first
 void SimDuelMode(void) {
-    // u8 playerOrder = DecidePlayerOrder();
-    // for (s32 i = 0; i < 244; i++) {
-    //     ADV_SEED(cur_rng_seed);
-    // }
-    // s32 someResultDuringMillenniumSpin = func_800EEF80_102BA0(20.0f);
 
     // for (u32 i = 0; i < 100000; i++) {
     //     u32 chain = 0;
@@ -198,31 +193,90 @@ void SimDuelMode(void) {
     //     cur_rng_seed = prevSeed;
     //     ADV_SEED(cur_rng_seed);
     // }
-        
 
-    u32 prevPlayerOrder = 0;
+    u32 prevSeed = cur_rng_seed;
     s32 chain = 0;
-    u32 seedChainStart = 0;
-    for (s32 i = 0; i < 20000; i++) {
-        u32 prevSeed = cur_rng_seed;
+    u32 logSeed = 0;
+    for (int i = 0; i < 7000; i++) {
+        cur_rng_seed = prevSeed;
+        if (i < 5000) {
+            ADV_SEED(cur_rng_seed);
+            prevSeed = cur_rng_seed;
+            continue;
+        }
         u8 playerOrder = DecidePlayerOrder();
-        if (prevPlayerOrder == playerOrder) {
-            if (chain == 0) {
-                seedChainStart = prevSeed;
-            }
-            chain++;
-        } else {
-            if (chain >= 3) {
-                if (prevPlayerOrder != 0) {
-                    printf("Chain for %ld, length %ld, Iterations %ld, Seed: %08lX\n", prevPlayerOrder, chain, i - chain, seedChainStart);
-                }
-                
+        if (playerOrder != 1) {
+            cur_rng_seed = prevSeed;
+            ADV_SEED(cur_rng_seed);
+            prevSeed = cur_rng_seed;
+            if (chain != 0 && chain >= 4) {
+                printf("Chain: %ld, Calls: %ld, Seed: %08lX\n", chain, i - chain, logSeed);
             }
             chain = 0;
+            continue;
         }
-        prevPlayerOrder = playerOrder;
+
+        for (s32 i = 0; i < 244; i++) {
+            ADV_SEED(cur_rng_seed);
+        }
+
+        if (func_800EEF80_102BA0(20.0f) <= 5) {
+            cur_rng_seed = prevSeed;
+            ADV_SEED(cur_rng_seed);
+            prevSeed = cur_rng_seed;
+            if (chain != 0 && chain >= 4) {
+                printf("Chain: %ld, Calls: %ld, Seed: %08lX\n", chain, i - chain, logSeed);
+            }
+            chain = 0;
+            continue;
+        }
+
+        if (chain == 0) {
+            //log seed
+            logSeed = prevSeed;
+        }
+
+        chain++;
 
         cur_rng_seed = prevSeed;
-        cur_rng_seed = cur_rng_seed * 0x41C64E6D + 0x3039; //advance seed
+        ADV_SEED(cur_rng_seed);
+        prevSeed = cur_rng_seed;
     }
+
+
+    //otherwise, good spin
+
+
+    // u8 playerOrder = DecidePlayerOrder();
+    // for (s32 i = 0; i < 244; i++) {
+    //     ADV_SEED(cur_rng_seed);
+    // }
+    // s32 someResultDuringMillenniumSpin = func_800EEF80_102BA0(20.0f);
+        
+
+    // u32 prevPlayerOrder = 0;
+    // s32 chain = 0;
+    // u32 seedChainStart = 0;
+    // for (s32 i = 0; i < 20000; i++) {
+    //     u32 prevSeed = cur_rng_seed;
+    //     u8 playerOrder = DecidePlayerOrder();
+    //     if (prevPlayerOrder == playerOrder) {
+    //         if (chain == 0) {
+    //             seedChainStart = prevSeed;
+    //         }
+    //         chain++;
+    //     } else {
+    //         if (chain >= 3) {
+    //             if (prevPlayerOrder != 0) {
+    //                 printf("Chain for %ld, length %ld, Iterations %ld, Seed: %08lX\n", prevPlayerOrder, chain, i - chain, seedChainStart);
+    //             }
+                
+    //         }
+    //         chain = 0;
+    //     }
+    //     prevPlayerOrder = playerOrder;
+
+    //     cur_rng_seed = prevSeed;
+    //     cur_rng_seed = cur_rng_seed * 0x41C64E6D + 0x3039; //advance seed
+    // }
 }
