@@ -48,8 +48,8 @@ s16 func_800EBCD4_FF8F4(u8 arg0) {
 }
 
 u8 HuGetRandomByte(void) {
-    ADV_SEED(cur_rng_seed);
-    return (cur_rng_seed + 1) >> 16;
+    cur_rng_seed = (cur_rng_seed*0x41C64E6D)+0x3039;
+    return (u8)((cur_rng_seed+1) >> 16) & 0xFF;
 }
 
 s32 func_800EEF80_102BA0(f32 arg0) { //800EFE20 in duel mode
@@ -83,5 +83,6 @@ s32 MeasureRngCalls(u32 seedStart, u32 seedEnd) {
 }
 
 u8 rollDice(void) { //func_800DB148 in duel mode
-    return (((HuGetRandomByte() & 0xFF) % 10) + 1);
+    u8 randByte = HuGetRandomByte();
+    return ((randByte % 10) + 1);
 }

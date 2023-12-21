@@ -3,6 +3,9 @@
 #include <string.h>
 #include "../include/mp3.h"
 
+#define ROLL_DICE_BLOCK_TIME 23
+s32 callAmountBetweenSpace2[] = {6, 11, 16};
+
 s32 itemIDAmounts[148]; //ARRAY_COUNT(spaces)
 
 //i think this is only 8 in size, made it 16 for safety
@@ -25,6 +28,69 @@ u8 D_80101468_115088[] = { //data for chilly waters
 s16 D_801054B8[] = { //data for chilly waters
     0x0036, 0x002F, 0x005E, 0x0012, 0x0051, 0x0060, 0x004D, 0x0029,
 };
+
+void find_hidden_block(s32 cpuRoll, s32 cpuWantedSpaceIndex) {
+    s32 prevItemLocation;
+    Blocks blockVariables;
+
+    for (s32 i = 0; i < 1000; i++) {
+        u32 prevRngSeed = cur_rng_seed;
+        blockVariables.coinBlockSpaceIndex = -1;
+        blockVariables.starBlockSpaceIndex = -1;
+        blockVariables.itemBlockSpaceIndex = -1;    
+        func_800FC594_1101B4(&blockVariables);
+        if (blockVariables.itemBlockSpaceIndex == cpuWantedSpaceIndex) {
+            //sim in game from this point
+            cur_rng_seed = prevRngSeed;
+            //sim rng advancements from block placements
+            // *2 on these because they call HuGetRandomByte twice per placement of block
+            for (int j = 0; j < D_800D03FC * 2; j++) {
+                ADV_SEED(cur_rng_seed);
+            }
+            for (int j = 0; j < D_800CE208 * 2; j++) {
+                ADV_SEED(cur_rng_seed);
+            }
+            for (int j = 0; j < D_800CDD68 * 2; j++) {
+                ADV_SEED(cur_rng_seed);
+            }
+            //sim time to load into game
+            for (int j = 0; j < 70; j++) {
+                ADV_SEED(cur_rng_seed);
+            }
+            printf("\nStarting Seed: %08lX\n", prevRngSeed);
+            printf("Seed before dice roll: %08lX\n", cur_rng_seed);
+            s32 roll = rollDice();
+            // printf("Variable roll is %d\n", roll);
+            if (roll != cpuRoll) {
+                prevRngSeed = cur_rng_seed;
+                ADV_SEED(cur_rng_seed);
+                continue;
+            }
+            printf(ANSI_GREEN"Roll is 1\n"ANSI_RESET);
+            //
+            s32 rngAdvancements = ROLL_DICE_BLOCK_TIME + callAmountBetweenSpace2[1] * (roll);
+
+            //cpu walks to space
+            for (int j = 0; j < rngAdvancements - 1; j++) { //-1 because???
+                ADV_SEED(cur_rng_seed);
+            }
+
+            printf("Seed when cpu stopped on space: %08lX\n\n", cur_rng_seed);
+
+            //cpu landed on space
+            u8 randByte = func_800EEF80_102BA0(100.0f) + 1;
+
+            if (randByte > 0x55 && randByte < 0x5B) {
+                printf(ANSI_BLUE"Is Wacky Watch\n"ANSI_RESET);
+            }            
+
+        }
+        cur_rng_seed = prevRngSeed;
+        ADV_SEED(cur_rng_seed);
+    }
+
+    
+}
 
 void hidden_block_gen_main(void) {
     s32 prevItemLocation;
@@ -124,6 +190,9 @@ s16 func_800EB5DC_FF1FC(s32 arg0, u8 arg1) {
 }
 
 void func_800FC594_1101B4(Blocks* blocks) {
+    D_800D03FC = 0;
+    D_800CE208 = 0;
+    D_800CDD68 = 0;
     if (func_80035F98_36B98(0xF) != 0) {
         while (blocks->coinBlockSpaceIndex == -1 || blocks->coinBlockSpaceIndex == blocks->starBlockSpaceIndex || blocks->coinBlockSpaceIndex == blocks->itemBlockSpaceIndex) {
             blocks->coinBlockSpaceIndex = func_800EBCD4_FF8F4(D_800D03FC);

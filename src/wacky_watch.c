@@ -31,11 +31,12 @@
 
 #define NO_DIRECTION_CHANGE 0
 
-
-s32 DoCpuLogicChillyWaters(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, u32 numOfJumps);
+s32 DoCpuLogicGeneric(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 numOfJumps);
+s32 DoCpuLogicChillyWaters(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction);
 s32 DoCpuLogicDeepBlooperSea(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction);
 s32 DoCpuLogicSpinyDesert(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction);
-s32 DoCpuLogicWoodyWoods1(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, u32 numOfJumps);
+s32 DoCpuLogicWoodyWoods1(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction);
+s32 DoCpuLogicCreepyCavern(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction);
 
 char* speedsText[] = {
     "FAST",
@@ -77,7 +78,7 @@ void CPUGetWatchGeneric(s32 rollValue, u32 numOfJumps) {
     }
 }
 
-void CPUGetWatchChillyWaters(s32 rollValue, u32 numOfJumps) {
+void CPUGetWatchChillyWaters(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction) {
     u32 prevSeed = cur_rng_seed;
     //204 calls from A press on cannon to cpu roll. not used, just a note
     for (u32 i = 0; i < 3000; i++) {
@@ -97,7 +98,7 @@ void CPUGetWatchChillyWaters(s32 rollValue, u32 numOfJumps) {
         //iterate over walk speeds and message speeds
         for (int j = 0; j < 3; j++) {
             for (int k = 0; k < 3; k++) {
-                if (DoCpuLogicChillyWaters(roll - 1, j, k, numOfJumps) == 1) {
+                if (DoCpuLogicChillyWaters(roll - 1, j, k, jumpsBeforeJunction, jumpsAfterJunction) == 1) {
                     printf("Calls: "ANSI_COLOR_GREEN"%ld"ANSI_COLOR_WHITE", Target: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i, i * 2,seedTemp, roll, speedsText[j], speedsText[k]);
                 }
                 cur_rng_seed = prevSeed;
@@ -174,7 +175,7 @@ void CPUGetWatchSpinyDesert(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAft
     }    
 }
 
-void CPUGetWatchWoodyWoods(s32 rollValue, u32 numOfJumps) {
+void CPUGetWatchWoodyWoods(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction) {
     u32 prevSeed = cur_rng_seed;
 
     // //extra advancements for cannon shot
@@ -208,7 +209,41 @@ void CPUGetWatchWoodyWoods(s32 rollValue, u32 numOfJumps) {
         //iterate over walk speeds and message speeds
         for (int j = 0; j < 3; j++) {
             for (int k = 0; k < 3; k++) {
-                if (DoCpuLogicWoodyWoods1(roll - 1, j, k, numOfJumps) == 1) {
+                if (DoCpuLogicWoodyWoods1(roll - 1, j, k, jumpsBeforeJunction, jumpsAfterJunction) == 1) {
+                    printf("Calls: "ANSI_COLOR_GREEN"%ld"ANSI_COLOR_WHITE", Target: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i, i * 2,seedTemp, roll, speedsText[j], speedsText[k]);
+                }
+                cur_rng_seed = prevSeed;
+            }
+        }
+    }    
+}
+
+void CPUGetWatchCreepyCavern(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction) {
+    u32 prevSeed = cur_rng_seed;
+
+    for (u32 i = 0; i < 3000; i++) {
+        if (i < 900) {
+            ADV_SEED(cur_rng_seed);
+            prevSeed = cur_rng_seed;
+            continue;
+        }
+        //printf("CurSeed: %08lX\n", cur_rng_seed);
+        cur_rng_seed = prevSeed;
+        u32 seedTemp = cur_rng_seed;
+        s32 roll = rollDice();
+        
+        prevSeed = cur_rng_seed;
+
+        if (rollValue != 0) {
+            if (roll != rollValue) {
+                continue;
+            }
+        }
+
+        //iterate over walk speeds and message speeds
+        for (int j = 0; j < 3; j++) {
+            for (int k = 0; k < 3; k++) {
+                if (DoCpuLogicCreepyCavern(roll - 1, j, k, jumpsBeforeJunction, jumpsAfterJunction) == 1) {
                     printf("Calls: "ANSI_COLOR_GREEN"%ld"ANSI_COLOR_WHITE", Target: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i, i * 2,seedTemp, roll, speedsText[j], speedsText[k]);
                 }
                 cur_rng_seed = prevSeed;
@@ -349,7 +384,7 @@ s32 DoJunction(s32 advancements, s32 odds, s32 outcomeWanted, s32 jumpsBeforeJun
         return 0;
     }
 
-    if (outcomeWanted == NO_DIRECTION_CHANGE) { //CPU went the way the arrow as already facing
+    if (outcomeWanted == 1) { //CPU went the way the arrow as already facing
         for (int i = 0; i < 42; i++) {
             ADV_SEED(cur_rng_seed);
         }        
@@ -387,7 +422,7 @@ void DoUpToJunctionAdvancements(s32 j) {
 }
 
 //works when the cpu only needs to go across spaces to get to item space
-s32 DoCpuLogicGeneric(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, u32 numOfJumps) {
+s32 DoCpuLogicGeneric(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 numOfJumps) {
     if (numOfJumps != 0) {
         DoJumpAdvancements(walkSpeed, numOfJumps);
     }
@@ -404,18 +439,15 @@ s32 DoCpuLogicGeneric(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, u32 numOfJ
     return HandleLogicFromItemSpace(messageSpeed);
 }
 
-s32 DoCpuLogicChillyWaters(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, u32 numOfJumps) {
+s32 DoCpuLogicChillyWaters(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction) {
     s32 ret = 0;
     int rngAdvancements = 0;
-    if (numOfJumps != 0) {
-        DoJumpAdvancements(walkSpeed, numOfJumps);
-    }
     switch(rollIndex) {
         case 8:
         case 7:
         case 6:
         case 5:
-        case 4:        
+        case 4:    
             rngAdvancements = ROLL_DICE_BLOCK_TIME + (callAmountBetweenSpace[walkSpeed] * (rollIndex - 3));
             
             // walk to bank
@@ -426,6 +458,9 @@ s32 DoCpuLogicChillyWaters(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, u32 n
             DoBankAdvancements(messageSpeed);
         case 3:
         case 2:
+            if (jumpsBeforeJunction != 0) {
+                DoJumpAdvancements(walkSpeed, jumpsBeforeJunction);
+            }
             //2 spaces after bank but before junction
             if (rollIndex > 3) {
                 rngAdvancements = (callAmountBetweenSpace[walkSpeed] * 2);
@@ -448,6 +483,9 @@ s32 DoCpuLogicChillyWaters(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, u32 n
         // //after junction
         case 1:
         case 0:
+            if (jumpsAfterJunction != 0) {
+                DoJumpAdvancements(walkSpeed, jumpsAfterJunction);
+            }
             //advance rng up to item space event decision
             if (rollIndex > 1) {
                 rngAdvancements = (callAmountBetweenSpace[walkSpeed] * 3);
@@ -473,6 +511,7 @@ s32 DoCpuLogicChillyWaters(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, u32 n
 s32 DoCpuLogicDeepBlooperSea(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction) {
     s32 ret = 0;
     int rngAdvancements = 0;
+
     switch(rollIndex) {
         case 9:
         case 8:
@@ -488,6 +527,9 @@ s32 DoCpuLogicDeepBlooperSea(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32
             DoBankAdvancements(messageSpeed);
         case 5:
         case 4:
+            if (jumpsBeforeJunction != 0) {
+                DoJumpAdvancements(walkSpeed, jumpsBeforeJunction);
+            }
             //2 spaces after bank but before junction
             if (rollIndex > 5) {
                 rngAdvancements = (callAmountBetweenSpace[walkSpeed] * 2);
@@ -495,25 +537,20 @@ s32 DoCpuLogicDeepBlooperSea(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32
                 rngAdvancements  = ROLL_DICE_BLOCK_TIME + (callAmountBetweenSpace[walkSpeed] * (rollIndex - 3));
             }
 
-            s32 junctionOutcome = DoJunction(rngAdvancements, 70, 0, jumpsBeforeJunction, walkSpeed);
-            if (junctionOutcome == 0) {
+            DoUpToJunctionAdvancements(rngAdvancements);
+
+            //cpu decides direction
+            //printf("Seed before junction: %08lX\n", cur_rng_seed);
+            if (RNGPercentChance(70) == 1) { //CPU went left
                 return 0;
             }
+            //cpu decision time (cpu chose the way the arrow was already facing)
+            //TODO: figure out time if cpu needs to swap directions
 
-            // DoUpToJunctionAdvancements(rngAdvancements);
-
-            // //cpu decides direction
-            // //printf("Seed before junction: %08lX\n", cur_rng_seed);
-            // if (RNGPercentChance(70) == 1) { //CPU went left
-            //     return 0;
-            // }
-            // //cpu decision time (cpu chose the way the arrow was already facing)
-            // //TODO: figure out time if cpu needs to swap directions
-
-            // //42 if same direction, 51 if not
-            // for (int i = 0; i < 51; i++) {
-            //     ADV_SEED(cur_rng_seed);
-            // }
+            //42 if same direction, 51 if not
+            for (int i = 0; i < 51; i++) {
+                ADV_SEED(cur_rng_seed);
+            }
 
         //after junction
         case 3:
@@ -547,15 +584,30 @@ s32 DoCpuLogicDeepBlooperSea(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32
 
 s32 DoCpuLogicSpinyDesert(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction) {
     int rngAdvancements;
+
     switch (rollIndex) {
         case 9:
         case 8:
         case 7:
+            if (jumpsBeforeJunction != 0) {
+                DoJumpAdvancements(walkSpeed, jumpsBeforeJunction);
+            }
         
             rngAdvancements  = ROLL_DICE_BLOCK_TIME + (callAmountBetweenSpace[walkSpeed] * (rollIndex - 6));
-            s32 junctionOutcome = DoJunction(rngAdvancements, 60, NO_DIRECTION_CHANGE, jumpsBeforeJunction, walkSpeed);
-            if (junctionOutcome == 0) {
+            //printf("number of advancements: %d\n", rngAdvancements);
+            DoUpToJunctionAdvancements(rngAdvancements);
+
+            //cpu decides direction
+            //printf("Seed before junction: %08lX\n", cur_rng_seed);
+            if (RNGPercentChance(60) == 0) { //changes from base direction
                 return 0;
+            }
+            //cpu decision time (cpu chose the way the arrow was already facing)
+            //Note: Arrow always starts facing left?
+
+            //42 if cpu goes same direction arrow starts (left); 51 advancements if arrow needs to change
+            for (int i = 0; i < 42; i++) {
+                ADV_SEED(cur_rng_seed);
             }
         case 6:
         case 5:
@@ -593,33 +645,16 @@ s32 DoCpuLogicSpinyDesert(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 ju
     return 0;
 }
 
-s32 DoCpuLogicWoodyWoods1(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, u32 numOfJumps) {
+s32 DoCpuLogicWoodyWoods1(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction) {
     int rngAdvancements;
-    if (numOfJumps != 0) {
-        switch (walkSpeed) {
-        case 0:
-            for (int i = 0; i < 2; i++) {
-                ADV_SEED(cur_rng_seed);
-            }
-            break;
-        case 1:
-            for (int i = 0; i < 5; i++) {
-                ADV_SEED(cur_rng_seed);
-            }
-            break;
-        case 2:
-            for (int i = 0; i < 15; i++) {
-                ADV_SEED(cur_rng_seed);
-            }
-            break;
-        }
-    }
 
     switch (rollIndex) {
         case 9:
         case 8:
         case 7:
-        
+            if (jumpsBeforeJunction != 0) {
+                DoJumpAdvancements(walkSpeed, jumpsBeforeJunction);
+            }
             rngAdvancements  = ROLL_DICE_BLOCK_TIME + (callAmountBetweenSpace[walkSpeed] * (rollIndex - 6));
             //printf("number of advancements: %d\n", rngAdvancements);
             DoUpToJunctionAdvancements(rngAdvancements);
@@ -651,6 +686,9 @@ s32 DoCpuLogicWoodyWoods1(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, u32 nu
         case 2:
         case 1:
         case 0:
+            if (jumpsAfterJunction != 0) {
+                DoJumpAdvancements(walkSpeed, jumpsAfterJunction);
+            }
             //advance rng up to item space event decision
             if (rollIndex > 6) {
                 rngAdvancements = (callAmountBetweenSpace[walkSpeed] * 8);
@@ -666,6 +704,66 @@ s32 DoCpuLogicWoodyWoods1(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, u32 nu
             for (int i = 0; i < 8; i++) {
                 ADV_SEED(cur_rng_seed);
             }
+            return HandleLogicFromItemSpace(messageSpeed);  
+    }
+    return 0;
+}
+
+
+s32 DoCpuLogicCreepyCavern(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction) {
+    int rngAdvancements;
+
+    switch (rollIndex) {
+        case 6:
+        case 5:
+        case 4:
+
+            rngAdvancements = ROLL_DICE_BLOCK_TIME + (callAmountBetweenSpace[walkSpeed] * (rollIndex - 3));
+            
+            // walk to bank
+            for (int i = 0; i < rngAdvancements; i++) {
+                ADV_SEED(cur_rng_seed);
+            }
+
+            DoBankAdvancements(messageSpeed);
+        case 3:
+        case 2:
+        case 1:
+        case 0:
+            if (jumpsBeforeJunction != 0) {
+                DoJumpAdvancements(walkSpeed, jumpsBeforeJunction);
+            }
+
+            if (rollIndex > 3) {
+                rngAdvancements = (callAmountBetweenSpace[walkSpeed] * 4);
+            } else {
+                rngAdvancements = ROLL_DICE_BLOCK_TIME + callAmountBetweenSpace[walkSpeed] * (rollIndex + 1);
+            }
+            //printf("number of advancements: %d\n", rngAdvancements);
+            DoUpToJunctionAdvancements(rngAdvancements);
+
+            //cpu decides direction
+            //printf("Seed before junction: %08lX\n", cur_rng_seed);
+
+            //easy difficulty decision
+            if (RNGPercentChance(60) == 1) { //cpu didnt change direction, exit
+                return 0;
+            }
+
+            for (int i = 0; i < 51; i++) {
+                ADV_SEED(cur_rng_seed);
+            }
+
+            for (int i = 0; i < callAmountBetweenSpace[walkSpeed]; i++) {
+                ADV_SEED(cur_rng_seed);
+            }
+
+            //player turn to space
+            for (int i = 0; i < 8; i++) {
+                ADV_SEED(cur_rng_seed);
+            }
+
+            //printf("Seed before item space event: %08lX\n", cur_rng_seed);
             return HandleLogicFromItemSpace(messageSpeed);  
     }
     return 0;
