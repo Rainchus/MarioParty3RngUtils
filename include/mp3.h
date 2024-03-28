@@ -29,14 +29,20 @@ typedef struct SpaceData {
 /* 0x20 */ void* event_list;
 } SpaceData;
 
+enum Items {
+    MUSHROOM = 0,
+    SKELETON_KEY = 1,
+};
+
 typedef struct Blocks {
     s16 coinBlockSpaceIndex;
     s16 starBlockSpaceIndex;
     s16 itemBlockSpaceIndex;
 } Blocks;
 
-extern SpaceData spaces[];
+extern SpaceData* spacesForBoards[];
 extern u32 cur_rng_seed;
+extern u32 rng_seeds_by_index[];
 
 #define ADV_SEED(seed) seed = (seed * 0x41C64E6D + 0x3039)
 
@@ -44,12 +50,19 @@ u8 rollDice(void);
 u8 rollDice2(void);
 u8 RNGPercentChance(s8 arg0);
 s32 func_800EEF80_102BA0(f32 arg0);
-s32 MeasureRngCalls(u32 seedStart, u32 seedEnd);
-SpaceData* func_800EB160_FED80(s16 arg0);
-void func_800FC594_1101B4(Blocks* blocks);
-s16 func_800EBCD4_FF8F4(u8 arg0);
+u32 MeasureRngCalls(u32 seedStart, u32 seedEnd);
+SpaceData* func_800EB160_FED80(s16 arg0, s32 boardIndex);
+void func_800FC594_1101B4(Blocks* blocks, s32 numOfSpaces, s32 boardIndex);
+s16 func_800EBCD4_FF8F4(u8 arg0, s32 numOfBoardSpaces, s32 boardIndex);
 s32 func_80035F98_36B98(s32 input);
 void hidden_block_gen_main(void);
 void CPUGetWatchGeneric(s32 rollValue, u32 numOfJumps);
+
+#define CHILLY_WATERS 0
+#define DEEP_BLOOPER_SEA 1
+#define SPINY_DESERT 2
+#define WOODY_WOODS 3
+#define CREEPY_CAVERN 4
+#define WALUIGIS_ISLAND 5
 
 #endif

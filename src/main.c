@@ -5,7 +5,6 @@
 
 u32 cur_rng_seed = 0x0000D9ED; //initial starting seed D_80097650
 
-// Function declarations
 void simduel(int argc, char *argv[]);
 void simduel2(int argc, char *argv[]);
 void simduel3(int argc, char *argv[]);
@@ -13,15 +12,14 @@ void rngadv(int argc, char *argv[]);
 void rollchain();
 void cpuitemspacewatch(int argc, char *argv[]);
 void hiddenblockgen(int argc, char *argv[]);
-
 void SimDuelMode(void);
 void SimDuelMode2(void);
 void SimDuelMode3(void);
-void CPUGetWatchChillyWaters(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction);
-void CPUGetWatchSpinyDesert(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction);
-void CPUGetWatchWoodyWoods(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction);
-void CPUGetWatchDeepBlooperSea(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction);
-void CPUGetWatchCreepyCavern(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction);
+void CPUGetWatchChillyWaters(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction, s32 itemSlot1);
+void CPUGetWatchSpinyDesert(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction, s32 itemSlot1);
+void CPUGetWatchWoodyWoods(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction, s32 itemSlot1);
+void CPUGetWatchDeepBlooperSea(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction, s32 itemSlot1);
+void CPUGetWatchCreepyCavern(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction, s32 itemSlot1);
 void cpu_item_space_watch_deep_blooper_sea(int argc, char* argv[]);
 void cpu_item_space_watch_chilly_waters(int argc, char* argv[]);
 void cpu_item_space_watch_spiny_desert(int argc, char* argv[]);
@@ -166,8 +164,8 @@ void rngadv(int argc, char* argv[]) {
     }
 
     //printf("Seed1: %08lX, Seed2: %08lX\n", seed1, seed2);
-    s32 callTotal = MeasureRngCalls(seed1, seed2);
-    printf("Calls: %ld", callTotal);   
+    u32 callTotal = MeasureRngCalls(seed1, seed2);
+    printf("Calls: %08lu", callTotal);   
 }
 
 void rollchain(int argc, char* argv[]) {
@@ -247,8 +245,15 @@ void cpu_item_space_watch_chilly_waters(int argc, char* argv[]) {
     s32 rollValue = 0;
     s32 jumpsBeforeJunction = 0;
     s32 jumpsAfterJunction = 0;
+    char bufferForItem[32];
+    s32 itemSlot1 = -1;
 
     switch (argc) {
+        case 6:
+            sscanf(argv[5], "%s", bufferForItem);
+            if (strncmp(bufferForItem, "--mushroom", sizeof("--mushroom")) == 0) {
+                itemSlot1 = MUSHROOM;
+            }
         case 5:
             sscanf(argv[4], "%ld", &jumpsAfterJunction);
             if (jumpsAfterJunction > 10 || jumpsAfterJunction < 0) {
@@ -270,15 +275,22 @@ void cpu_item_space_watch_chilly_waters(int argc, char* argv[]) {
     }
 
     printf("rollValue: %ld, jumpsBefore: %ld, jumpsAfter: %ld\n", rollValue, jumpsBeforeJunction, jumpsAfterJunction);
-    CPUGetWatchChillyWaters(rollValue, jumpsBeforeJunction, jumpsAfterJunction);
+    CPUGetWatchChillyWaters(rollValue, jumpsBeforeJunction, jumpsAfterJunction, itemSlot1);
 }
 
 void cpu_item_space_watch_deep_blooper_sea(int argc, char* argv[]) {
     s32 rollValue = 0;
     s32 jumpsBeforeJunction = 0;
     s32 jumpsAfterJunction = 0;
+    char bufferForItem[32];
+    s32 itemSlot1 = -1;
 
     switch (argc) {
+        case 6:
+            sscanf(argv[5], "%s", bufferForItem);
+            if (strncmp(bufferForItem, "--mushroom", sizeof("--mushroom")) == 0) {
+                itemSlot1 = MUSHROOM;
+            }
         case 5:
             sscanf(argv[4], "%ld", &jumpsAfterJunction);
             if (jumpsAfterJunction > 10 || jumpsAfterJunction < 0) {
@@ -300,15 +312,24 @@ void cpu_item_space_watch_deep_blooper_sea(int argc, char* argv[]) {
     }
 
     printf("rollValue: %ld, jumpsBefore: %ld, jumpsAfter: %ld\n", rollValue, jumpsBeforeJunction, jumpsAfterJunction);
-    CPUGetWatchDeepBlooperSea(rollValue, jumpsBeforeJunction, jumpsAfterJunction);
+    CPUGetWatchDeepBlooperSea(rollValue, jumpsBeforeJunction, jumpsAfterJunction, itemSlot1);
 }
 
 void cpu_item_space_watch_spiny_desert(int argc, char* argv[]) {
     s32 rollValue = 0;
     s32 jumpsBeforeJunction = 0;
     s32 jumpsAfterJunction = 0;
+    char bufferForItem[32];
+    s32 itemSlot1 = -1;
 
     switch (argc) {
+        case 6:
+            sscanf(argv[5], "%s", bufferForItem);
+            if (strncmp(bufferForItem, "--mushroom", sizeof("--mushroom")) == 0) {
+                itemSlot1 = MUSHROOM;
+            } else if (strncmp(bufferForItem, "--skeleton_key", sizeof("--skeleton_key")) == 0) {
+                itemSlot1 = SKELETON_KEY;
+            }
         case 5:
             sscanf(argv[4], "%ld", &jumpsAfterJunction);
             if (jumpsAfterJunction > 10 || jumpsAfterJunction < 0) {
@@ -329,16 +350,23 @@ void cpu_item_space_watch_spiny_desert(int argc, char* argv[]) {
             }
     }
 
-    printf("rollValue: %ld, jumpsBefore: %ld, jumpsAfter: %ld\n", rollValue, jumpsBeforeJunction, jumpsAfterJunction);
-    CPUGetWatchSpinyDesert(rollValue, jumpsBeforeJunction, jumpsAfterJunction);
+    printf("rollValue: %ld, jumpsBefore: %ld, jumpsAfter: %ld item: %ld\n", rollValue, jumpsBeforeJunction, jumpsAfterJunction, itemSlot1);
+    CPUGetWatchSpinyDesert(rollValue, jumpsBeforeJunction, jumpsAfterJunction, itemSlot1);
 }
 
 void cpu_item_space_watch_woody_woods(int argc, char* argv[]) {
     s32 rollValue = 0;
     s32 jumpsBeforeJunction = 0;
     s32 jumpsAfterJunction = 0;
+    char bufferForItem[32];
+    s32 itemSlot1 = -1;
 
     switch (argc) {
+        case 6:
+            sscanf(argv[5], "%s", bufferForItem);
+            if (strncmp(bufferForItem, "--mushroom", sizeof("--mushroom")) == 0) {
+                itemSlot1 = MUSHROOM;
+            }
         case 5:
             sscanf(argv[4], "%ld", &jumpsAfterJunction);
             if (jumpsAfterJunction > 10 || jumpsAfterJunction < 0) {
@@ -360,15 +388,22 @@ void cpu_item_space_watch_woody_woods(int argc, char* argv[]) {
     }
 
     printf("rollValue: %ld, jumpsBefore: %ld, jumpsAfter: %ld\n", rollValue, jumpsBeforeJunction, jumpsAfterJunction);
-    CPUGetWatchWoodyWoods(rollValue, jumpsBeforeJunction, jumpsAfterJunction);
+    CPUGetWatchWoodyWoods(rollValue, jumpsBeforeJunction, jumpsAfterJunction, itemSlot1);
 }
 
 void cpu_item_space_watch_creepy_cavern(int argc, char* argv[]) {
     s32 rollValue = 0;
     s32 jumpsBeforeJunction = 0;
     s32 jumpsAfterJunction = 0;
+    char bufferForItem[32];
+    s32 itemSlot1 = -1;
 
     switch (argc) {
+        case 6:
+            sscanf(argv[5], "%s", bufferForItem);
+            if (strncmp(bufferForItem, "--mushroom", sizeof("--mushroom")) == 0) {
+                itemSlot1 = MUSHROOM;
+            }
         case 5:
             sscanf(argv[4], "%ld", &jumpsAfterJunction);
             if (jumpsAfterJunction > 10 || jumpsAfterJunction < 0) {
@@ -390,7 +425,7 @@ void cpu_item_space_watch_creepy_cavern(int argc, char* argv[]) {
     }
 
     printf("rollValue: %ld, jumpsBefore: %ld, jumpsAfter: %ld\n", rollValue, jumpsBeforeJunction, jumpsAfterJunction);
-    CPUGetWatchCreepyCavern(rollValue, jumpsBeforeJunction, jumpsAfterJunction);
+    CPUGetWatchCreepyCavern(rollValue, jumpsBeforeJunction, jumpsAfterJunction, itemSlot1);
 }
 
 void hiddenblockgen(int argc, char* argv[]) {

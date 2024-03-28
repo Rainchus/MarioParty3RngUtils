@@ -4,7 +4,7 @@
 #include "../include/mp3.h"
 
 u8 HuGetRandomByte(void);
-s16 func_800EB5DC_FF1FC(s32 arg0, u8 arg1);
+s16 func_800EB5DC_FF1FC(s32 arg0, u8 arg1, s32 numOfBoardSpaces, s32 boardIndex);
 
 //probably only 4 entries but 10 for safety
 u8 D_800CD0B6[] = {0xC8, 0xBD, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -43,8 +43,8 @@ s32 func_80035F98_36B98(s32 input) {
     return byteValue & mask;
 }
 
-s16 func_800EBCD4_FF8F4(u8 arg0) {
-    return func_800EB5DC_FF1FC(2, arg0);
+s16 func_800EBCD4_FF8F4(u8 arg0, s32 numOfBoardSpaces, s32 boardIndex) {
+    return func_800EB5DC_FF1FC(2, arg0, numOfBoardSpaces, boardIndex);
 }
 
 u8 HuGetRandomByte(void) {
@@ -64,15 +64,16 @@ s32 func_800EEF80_102BA0(f32 arg0) { //800EFE20 in duel mode
     return scaledRandom;
 }
 
-SpaceData* func_800EB160_FED80(s16 arg0) {
-    return &spaces[arg0];
+SpaceData* func_800EB160_FED80(s16 arg0, s32 boardIndex) {
+    SpaceData* boardSpaces = spacesForBoards[boardIndex];
+    return &boardSpaces[arg0];
 }
 
-s32 MeasureRngCalls(u32 seedStart, u32 seedEnd) {
-    s32 calls = 0;
+u32 MeasureRngCalls(u32 seedStart, u32 seedEnd) {
+    u32 calls = 0;
     cur_rng_seed = seedStart;
     while (cur_rng_seed != seedEnd) {
-        if (calls > 10000000) {
+        if (calls > 0xFFFFFFFE) {
             printf("Is more than 10 million calls away...\n");
             return -1;
         }

@@ -12,7 +12,7 @@ s32 itemIDAmounts[148]; //ARRAY_COUNT(spaces)
 //on chilly waters this array is blank, but on desert map it's not?
 s16 D_801052B8[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; 
 
-u16 total_board_spaces = 0x94; //chilly waters has 0x94 spaces (D_80105210)
+u16 chilly_waters_total_board_spaces = 0x94; //chilly waters has 0x94 spaces (D_80105210)
 s16 D_801054F8 = 0x08; //in chilly waters, this is 0x08 at first (does this change?)
 s16 D_801054B6 = 0; //no idea, is zero on chilly waters start
 
@@ -20,7 +20,7 @@ s16 D_800D03FC = 0; //total coin blocks placed
 s16 D_800CE208 = 0; //total star blocks placed
 s16 D_800CDD68 = 0; //total item blocks placed
 
-u8 D_80101468_115088[] = { //data for chilly waters
+u8 D_80101468_115088[] = { //data for chilly waters (all boards?)
     0x01, 0x02, 0x04, 0x01, 0x10, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
     0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01
 };
@@ -38,21 +38,10 @@ void find_hidden_block(s32 cpuRoll, s32 cpuWantedSpaceIndex) {
         blockVariables.coinBlockSpaceIndex = -1;
         blockVariables.starBlockSpaceIndex = -1;
         blockVariables.itemBlockSpaceIndex = -1;    
-        func_800FC594_1101B4(&blockVariables);
+        func_800FC594_1101B4(&blockVariables, chilly_waters_total_board_spaces, CHILLY_WATERS);
         if (blockVariables.itemBlockSpaceIndex == cpuWantedSpaceIndex) {
             //sim in game from this point
             cur_rng_seed = prevRngSeed;
-            //sim rng advancements from block placements
-            // *2 on these because they call HuGetRandomByte twice per placement of block
-            for (int j = 0; j < D_800D03FC * 2; j++) {
-                ADV_SEED(cur_rng_seed);
-            }
-            for (int j = 0; j < D_800CE208 * 2; j++) {
-                ADV_SEED(cur_rng_seed);
-            }
-            for (int j = 0; j < D_800CDD68 * 2; j++) {
-                ADV_SEED(cur_rng_seed);
-            }
             //sim time to load into game
             for (int j = 0; j < 70; j++) {
                 ADV_SEED(cur_rng_seed);
@@ -100,7 +89,7 @@ void hidden_block_gen_main(void) {
     blockVariables.starBlockSpaceIndex = -1;
     blockVariables.itemBlockSpaceIndex = -1;
     cur_rng_seed = 0;
-    func_800FC594_1101B4(&blockVariables);
+    func_800FC594_1101B4(&blockVariables, chilly_waters_total_board_spaces, CHILLY_WATERS);
     itemIDAmounts[blockVariables.itemBlockSpaceIndex]++;
     prevItemLocation = blockVariables.itemBlockSpaceIndex;
     for (u32 i = 1; i < 0x100000; i++) {
@@ -108,7 +97,7 @@ void hidden_block_gen_main(void) {
         blockVariables.starBlockSpaceIndex = -1;
         blockVariables.itemBlockSpaceIndex = -1;
         cur_rng_seed = i;
-        func_800FC594_1101B4(&blockVariables);
+        func_800FC594_1101B4(&blockVariables, chilly_waters_total_board_spaces, CHILLY_WATERS);
         itemIDAmounts[blockVariables.itemBlockSpaceIndex]++;
         if (prevItemLocation == blockVariables.itemBlockSpaceIndex) {
             if (blockVariables.itemBlockSpaceIndex == 0x2C) {
@@ -127,7 +116,7 @@ void hidden_block_gen_main(void) {
     }
 }
 
-s16 func_800EB5DC_FF1FC(s32 arg0, u8 arg1) {
+s16 func_800EB5DC_FF1FC(s32 arg0, u8 arg1, s32 numOfBoardSpaces, s32 boardIndex) {
     s32 var_s1;
     u8 var_s1_2;
     SpaceData* temp_a1;
@@ -136,8 +125,8 @@ s16 func_800EB5DC_FF1FC(s32 arg0, u8 arg1) {
     var_s1 = 0;
 
     //find valid spaces block could go
-    for (i = 0; i < total_board_spaces; i++) {
-        if ((D_80101468_115088[(func_800EB160_FED80(i)->space_type & 0xF)] & (u16)arg0)){
+    for (i = 0; i < numOfBoardSpaces; i++) {
+        if ((D_80101468_115088[(func_800EB160_FED80(i, boardIndex)->space_type & 0xF)] & (u16)arg0)){
             var_s1++;
         }
     }
@@ -151,8 +140,8 @@ s16 func_800EB5DC_FF1FC(s32 arg0, u8 arg1) {
 
     tempVar = (arg1 & 0xFF) < 5;
 
-    for (i = 0;; i = -(i < total_board_spaces) & i) {
-        temp_a1 = func_800EB160_FED80(i);
+    for (i = 0;; i = -(i < numOfBoardSpaces) & i) {
+        temp_a1 = func_800EB160_FED80(i, boardIndex);
         for (j = 0; j < D_801054F8; j++) {
             if (D_801054B8[j] == i) {
                 break;
@@ -189,13 +178,13 @@ s16 func_800EB5DC_FF1FC(s32 arg0, u8 arg1) {
     return i;
 }
 
-void func_800FC594_1101B4(Blocks* blocks) {
+void func_800FC594_1101B4(Blocks* blocks, s32 numOfSpaces, s32 boardIndex) {
     D_800D03FC = 0;
     D_800CE208 = 0;
     D_800CDD68 = 0;
     if (func_80035F98_36B98(0xF) != 0) {
         while (blocks->coinBlockSpaceIndex == -1 || blocks->coinBlockSpaceIndex == blocks->starBlockSpaceIndex || blocks->coinBlockSpaceIndex == blocks->itemBlockSpaceIndex) {
-            blocks->coinBlockSpaceIndex = func_800EBCD4_FF8F4(D_800D03FC);
+            blocks->coinBlockSpaceIndex = func_800EBCD4_FF8F4(D_800D03FC, numOfSpaces, boardIndex);
             D_800D03FC += 1;
             //uneeded since we only care about initial placement
             // for (i = 0; i < 10; i++) {
@@ -208,7 +197,7 @@ void func_800FC594_1101B4(Blocks* blocks) {
             // }
         }
         while (blocks->starBlockSpaceIndex == -1 || blocks->coinBlockSpaceIndex == blocks->starBlockSpaceIndex || blocks->itemBlockSpaceIndex == blocks->starBlockSpaceIndex) {
-            blocks->starBlockSpaceIndex = func_800EBCD4_FF8F4(D_800CE208);
+            blocks->starBlockSpaceIndex = func_800EBCD4_FF8F4(D_800CE208, numOfSpaces, boardIndex);
             D_800CE208 += 1;
             //uneeded since we only care about initial placement
             // for (i = 0; i < 10; i++) {
@@ -222,7 +211,7 @@ void func_800FC594_1101B4(Blocks* blocks) {
         }
         
         while (blocks->itemBlockSpaceIndex == -1 || blocks->coinBlockSpaceIndex == blocks->itemBlockSpaceIndex || blocks->starBlockSpaceIndex == blocks->itemBlockSpaceIndex) {
-            blocks->itemBlockSpaceIndex = func_800EBCD4_FF8F4(D_800CDD68);
+            blocks->itemBlockSpaceIndex = func_800EBCD4_FF8F4(D_800CDD68, numOfSpaces, boardIndex);
             D_800CDD68 += 1;
             //uneeded since we only care about initial placement
             // for (i = 0; i < 10; i++) {

@@ -31,10 +31,15 @@
 
 #define NO_DIRECTION_CHANGE 0
 
+extern s16 D_800D03FC; //total coin blocks placed
+extern s16 D_800CE208; //total star blocks placed
+extern s16 D_800CDD68; //total item blocks placed
+extern u16 chilly_waters_total_board_spaces;
+
 s32 DoCpuLogicGeneric(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 numOfJumps);
 s32 DoCpuLogicChillyWaters(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction);
 s32 DoCpuLogicDeepBlooperSea(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction);
-s32 DoCpuLogicSpinyDesert(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction);
+s32 DoCpuLogicSpinyDesert(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction, s32 itemSlot1);
 s32 DoCpuLogicWoodyWoods1(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction);
 s32 DoCpuLogicCreepyCavern(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction);
 
@@ -44,9 +49,11 @@ char* speedsText[] = {
     "SLOW",
 };
 
+//does not consider hidden block placement. Usually fine, but can rarely generate wrong seeds if 
+//- a hidden block is placed on another hidden block and has to be randomly placed again
 void CPUGetWatchGeneric(s32 rollValue, u32 numOfJumps) {
     u32 prevSeed = cur_rng_seed;
-    //204 calls from A press on cannon to cpu roll. not used, just a note
+
     for (u32 i = 0; i < 3000; i++) {
         if (i < 900) {
             ADV_SEED(cur_rng_seed);
@@ -79,177 +86,424 @@ void CPUGetWatchGeneric(s32 rollValue, u32 numOfJumps) {
 }
 
 void CPUGetWatchChillyWaters(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction) {
+    Blocks blockData;
+
     u32 prevSeed = cur_rng_seed;
-    //204 calls from A press on cannon to cpu roll. not used, just a note
+    u32 seedBeforeInGameLogic;
+
     for (u32 i = 0; i < 3000; i++) {
         //printf("CurSeed: %08lX\n", cur_rng_seed);
         cur_rng_seed = prevSeed;
         u32 seedTemp = cur_rng_seed;
+        blockData.coinBlockSpaceIndex = -1;
+        blockData.itemBlockSpaceIndex = -1;
+        blockData.starBlockSpaceIndex = -1;
+        func_800FC594_1101B4(&blockData, chilly_waters_total_board_spaces, CHILLY_WATERS); //place hidden blocks
+
+        //sim time to load into game
+        for (int j = 0; j < 70; j++) {
+            ADV_SEED(cur_rng_seed);
+        }
+
+        // u32 seedBeforeRoll = cur_rng_seed;
+        
         s32 roll = rollDice();
         
-        prevSeed = cur_rng_seed;
 
         if (rollValue != 0) {
             if (roll != rollValue) {
+                cur_rng_seed = prevSeed;
+                ADV_SEED(cur_rng_seed);
+                prevSeed = cur_rng_seed;
                 continue;
             }
         }
+
+        seedBeforeInGameLogic = cur_rng_seed;
 
         //iterate over walk speeds and message speeds
         for (int j = 0; j < 3; j++) {
             for (int k = 0; k < 3; k++) {
                 if (DoCpuLogicChillyWaters(roll - 1, j, k, jumpsBeforeJunction, jumpsAfterJunction) == 1) {
-                    printf("Calls: "ANSI_COLOR_GREEN"%ld"ANSI_COLOR_WHITE", Target: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i, i * 2,seedTemp, roll, speedsText[j], speedsText[k]);
+                    //// printf("Seed before roll: %08lX\n", seedBeforeRoll);
+                    // printf("Calls: "ANSI_COLOR_GREEN"%ld"ANSI_COLOR_WHITE", Target: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i, i * 2,seedTemp, roll, speedsText[j], speedsText[k]);
+                    printf("Calls: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i,seedTemp, roll, speedsText[j], speedsText[k]);
                 }
-                cur_rng_seed = prevSeed;
+                cur_rng_seed = seedBeforeInGameLogic;
             }
         }
+        cur_rng_seed = prevSeed;
+        ADV_SEED(cur_rng_seed);
+        prevSeed = cur_rng_seed;
     }
 }
 
-void CPUGetWatchDeepBlooperSea(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction) {
+void CPUGetWatchDeepBlooperSea(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction, s32 itemSlot1) {
+    Blocks blockData;
+
     u32 prevSeed = cur_rng_seed;
-    //204 calls from A press on cannon to cpu roll. not used, just a note
+    u32 seedBeforeInGameLogic;
+    u32 seedBeforeItemUse;
+    s32 setSeedBeforeItemUse = 0;
+
     for (u32 i = 0; i < 3000; i++) {
-        if (i < 900) {
-            ADV_SEED(cur_rng_seed);
-            prevSeed = cur_rng_seed;
-            continue;
-        }
         //printf("CurSeed: %08lX\n", cur_rng_seed);
         cur_rng_seed = prevSeed;
         u32 seedTemp = cur_rng_seed;
-        s32 roll = rollDice();
-        
-        prevSeed = cur_rng_seed;
+        blockData.coinBlockSpaceIndex = -1;
+        blockData.itemBlockSpaceIndex = -1;
+        blockData.starBlockSpaceIndex = -1;
+        func_800FC594_1101B4(&blockData, chilly_waters_total_board_spaces, DEEP_BLOOPER_SEA); //place hidden blocks
 
-        if (rollValue != 0) {
-            if (roll != rollValue) {
+        //sim time to load into game
+        for (int j = 0; j < 58; j++) {
+            ADV_SEED(cur_rng_seed);
+        }
+        setSeedBeforeItemUse = 0;
+        //check if cpu has mushroom and run logic accordingly
+        if (itemSlot1 == MUSHROOM) {
+            setSeedBeforeItemUse = 1;
+            seedBeforeItemUse = cur_rng_seed;
+            if (RNGPercentChance(80) == 1) {
+                cur_rng_seed = prevSeed;
+                ADV_SEED(cur_rng_seed);
+                prevSeed = cur_rng_seed;
                 continue;
             }
         }
+
+        for (int j = 0; j < 12; j++) {
+            ADV_SEED(cur_rng_seed);
+        }
+
+        // u32 seedBeforeRoll = cur_rng_seed;
+        s32 roll = rollDice();
+        
+        if (rollValue != 0) {
+            if (roll != rollValue) {
+                cur_rng_seed = prevSeed;
+                ADV_SEED(cur_rng_seed);
+                prevSeed = cur_rng_seed;
+                continue;
+            }
+        }
+
+        seedBeforeInGameLogic = cur_rng_seed;
 
         //iterate over walk speeds and message speeds
         for (int j = 0; j < 3; j++) {
             for (int k = 0; k < 3; k++) {
                 if (DoCpuLogicDeepBlooperSea(roll - 1, j, k, jumpsBeforeJunction, jumpsAfterJunction) == 1) {
-                    printf("Calls: "ANSI_COLOR_GREEN"%ld"ANSI_COLOR_WHITE", Target: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i, i * 2,seedTemp, roll, speedsText[j], speedsText[k]);
+                    //// printf("Seed before roll: %08lX\n", seedBeforeRoll);
+                    // printf("Calls: "ANSI_COLOR_GREEN"%ld"ANSI_COLOR_WHITE", Target: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i, i * 2,seedTemp, roll, speedsText[j], speedsText[k]);
+                    // printf("Seed before roll: %08lX\n", seedBeforeRoll);
+                    if (setSeedBeforeItemUse == 1) {
+                        // printf("Seed before Rng Check %08lX\n", seedBeforeItemUse);
+                    }
+                    printf("Calls: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i,seedTemp, roll, speedsText[j], speedsText[k]);
                 }
-                cur_rng_seed = prevSeed;
+                cur_rng_seed = seedBeforeInGameLogic;
             }
         }
+        cur_rng_seed = prevSeed;
+        ADV_SEED(cur_rng_seed);
+        prevSeed = cur_rng_seed;
     }
 }
 
-void CPUGetWatchSpinyDesert(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction) {
+void CPUGetWatchSpinyDesert(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction, s32 itemSlot1) {
+    Blocks blockData;
+
     u32 prevSeed = cur_rng_seed;
-    //204 calls from A press on cannon to cpu roll. not used, just a note
-    for (u32 i = 0; i < 3000; i++) {
-        if (i < 900) {
-            ADV_SEED(cur_rng_seed);
-            prevSeed = cur_rng_seed;
-            continue;
-        }
+    u32 seedBeforeInGameLogic;
+    u32 seedBeforeItemUse;
+    s32 setSeedBeforeItemUse = 0;
+
+    for (u32 i = 0; i < 5000; i++) {
         //printf("CurSeed: %08lX\n", cur_rng_seed);
         cur_rng_seed = prevSeed;
-        u32 seedTemp = cur_rng_seed;
-        s32 roll = rollDice();
-        
-        prevSeed = cur_rng_seed;
+        blockData.coinBlockSpaceIndex = -1;
+        blockData.itemBlockSpaceIndex = -1;
+        blockData.starBlockSpaceIndex = -1;
+        func_800FC594_1101B4(&blockData, chilly_waters_total_board_spaces, SPINY_DESERT); //place hidden blocks
 
-        if (rollValue != 0) {
-            if (roll != rollValue) {
+        //sim time to load into game
+        for (int j = 0; j < 58; j++) {
+            ADV_SEED(cur_rng_seed);
+        }
+        setSeedBeforeItemUse = 0;
+        //check if cpu has mushroom and run logic accordingly
+        if (itemSlot1 == MUSHROOM) {
+            setSeedBeforeItemUse = 1;
+            seedBeforeItemUse = cur_rng_seed;
+            if (RNGPercentChance(80) == 1) {
+                cur_rng_seed = prevSeed;
+                ADV_SEED(cur_rng_seed);
+                prevSeed = cur_rng_seed;
                 continue;
             }
         }
+
+        for (int j = 0; j < 12; j++) {
+            ADV_SEED(cur_rng_seed);
+        }
+
+        // u32 seedBeforeRoll = cur_rng_seed;
+        s32 roll = rollDice();
+        
+        if (rollValue != 0) {
+            if (roll != rollValue) {
+                cur_rng_seed = prevSeed;
+                ADV_SEED(cur_rng_seed);
+                prevSeed = cur_rng_seed;
+                continue;
+            }
+        }
+
+        seedBeforeInGameLogic = cur_rng_seed;
 
         //iterate over walk speeds and message speeds
         for (int j = 0; j < 3; j++) {
             for (int k = 0; k < 3; k++) {
-                if (DoCpuLogicSpinyDesert(roll - 1, j, k, jumpsBeforeJunction, jumpsAfterJunction) == 1) {
-                    printf("Calls: "ANSI_COLOR_GREEN"%ld"ANSI_COLOR_WHITE", Target: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i, i * 2,seedTemp, roll, speedsText[j], speedsText[k]);
+                if (DoCpuLogicSpinyDesert(roll - 1, j, k, jumpsBeforeJunction, jumpsAfterJunction, itemSlot1) == 1) {
+                    //// printf("Seed before roll: %08lX\n", seedBeforeRoll);
+                    // printf("Calls: "ANSI_COLOR_GREEN"%ld"ANSI_COLOR_WHITE", Target: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i, i * 2,seedTemp, roll, speedsText[j], speedsText[k]);
+                    // printf("Seed before roll: %08lX\n", seedBeforeRoll);
+                    if (setSeedBeforeItemUse == 1) {
+                        //printf("Seed before Rng Check %08lX\n", seedBeforeItemUse);
+                    }
+                    printf("Calls: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i, prevSeed, roll, speedsText[j], speedsText[k]);
                 }
-                cur_rng_seed = prevSeed;
+                cur_rng_seed = seedBeforeInGameLogic;
             }
         }
-    }    
+        cur_rng_seed = prevSeed;
+        ADV_SEED(cur_rng_seed);
+        prevSeed = cur_rng_seed;
+    }
 }
 
-void CPUGetWatchWoodyWoods(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction) {
-    u32 prevSeed = cur_rng_seed;
+//this one is tricky. hidden blocks are placed when loading the stage, but we
+// - wait until closing the text box of the sign turn to try and manip a wacky watch.
+// - due to this, unfortunately we just pray we dont get extra advancements on block placement.
+// perhaps a frame window of a second or so exist where we could avoid this issue
+void CPUGetWatchWoodyWoods(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction, s32 itemSlot1) {
+    Blocks blockData;
 
-    // //extra advancements for cannon shot
-    // for (int i = 0; i < 33 * 2; i++) {
-    //     ADV_SEED(cur_rng_seed);
-    // }
-    // //do advancements after pressing A on text box
-    // for (int i = 0; i < 92; i++) {
-    //     ADV_SEED(cur_rng_seed);
-    // }
-    //204 calls from A press on cannon to cpu roll. not used, just a note
+    u32 prevSeed = cur_rng_seed;
+    u32 seedBeforeInGameLogic;
+    u32 seedBeforeItemUse;
+    s32 setSeedBeforeItemUse = 0;
+
     for (u32 i = 0; i < 3000; i++) {
-        if (i < 900) {
-            ADV_SEED(cur_rng_seed);
-            prevSeed = cur_rng_seed;
-            continue;
-        }
         //printf("CurSeed: %08lX\n", cur_rng_seed);
         cur_rng_seed = prevSeed;
         u32 seedTemp = cur_rng_seed;
-        s32 roll = rollDice();
-        
-        prevSeed = cur_rng_seed;
+        blockData.coinBlockSpaceIndex = -1;
+        blockData.itemBlockSpaceIndex = -1;
+        blockData.starBlockSpaceIndex = -1;
+        func_800FC594_1101B4(&blockData, chilly_waters_total_board_spaces, WOODY_WOODS); //place hidden blocks
 
-        if (rollValue != 0) {
-            if (roll != rollValue) {
+        //sim time to load into game
+        for (int j = 0; j < 58; j++) {
+            ADV_SEED(cur_rng_seed);
+        }
+        setSeedBeforeItemUse = 0;
+        //check if cpu has mushroom and run logic accordingly
+        if (itemSlot1 == MUSHROOM) {
+            setSeedBeforeItemUse = 1;
+            seedBeforeItemUse = cur_rng_seed;
+            if (RNGPercentChance(80) == 1) {
+                cur_rng_seed = prevSeed;
+                ADV_SEED(cur_rng_seed);
+                prevSeed = cur_rng_seed;
                 continue;
             }
         }
+
+        for (int j = 0; j < 12; j++) {
+            ADV_SEED(cur_rng_seed);
+        }
+
+        // u32 seedBeforeRoll = cur_rng_seed;
+        s32 roll = rollDice();
+        
+        if (rollValue != 0) {
+            if (roll != rollValue) {
+                cur_rng_seed = prevSeed;
+                ADV_SEED(cur_rng_seed);
+                prevSeed = cur_rng_seed;
+                continue;
+            }
+        }
+
+        seedBeforeInGameLogic = cur_rng_seed;
 
         //iterate over walk speeds and message speeds
         for (int j = 0; j < 3; j++) {
             for (int k = 0; k < 3; k++) {
                 if (DoCpuLogicWoodyWoods1(roll - 1, j, k, jumpsBeforeJunction, jumpsAfterJunction) == 1) {
-                    printf("Calls: "ANSI_COLOR_GREEN"%ld"ANSI_COLOR_WHITE", Target: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i, i * 2,seedTemp, roll, speedsText[j], speedsText[k]);
+                    //// printf("Seed before roll: %08lX\n", seedBeforeRoll);
+                    // printf("Calls: "ANSI_COLOR_GREEN"%ld"ANSI_COLOR_WHITE", Target: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i, i * 2,seedTemp, roll, speedsText[j], speedsText[k]);
+                    // printf("Seed before roll: %08lX\n", seedBeforeRoll);
+                    if (setSeedBeforeItemUse == 1) {
+                        // printf("Seed before Rng Check %08lX\n", seedBeforeItemUse);
+                    }
+                    printf("Calls: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i,seedTemp, roll, speedsText[j], speedsText[k]);
                 }
-                cur_rng_seed = prevSeed;
+                cur_rng_seed = seedBeforeInGameLogic;
             }
         }
-    }    
+        cur_rng_seed = prevSeed;
+        ADV_SEED(cur_rng_seed);
+        prevSeed = cur_rng_seed;
+    }
 }
 
-void CPUGetWatchCreepyCavern(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction) {
+void CPUGetWatchCreepyCavern(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction, s32 itemSlot1) {
+    Blocks blockData;
+
     u32 prevSeed = cur_rng_seed;
+    u32 seedBeforeInGameLogic;
+    u32 seedBeforeItemUse;
+    s32 setSeedBeforeItemUse = 0;
 
     for (u32 i = 0; i < 3000; i++) {
-        if (i < 900) {
-            ADV_SEED(cur_rng_seed);
-            prevSeed = cur_rng_seed;
-            continue;
-        }
         //printf("CurSeed: %08lX\n", cur_rng_seed);
         cur_rng_seed = prevSeed;
         u32 seedTemp = cur_rng_seed;
-        s32 roll = rollDice();
-        
-        prevSeed = cur_rng_seed;
+        blockData.coinBlockSpaceIndex = -1;
+        blockData.itemBlockSpaceIndex = -1;
+        blockData.starBlockSpaceIndex = -1;
+        func_800FC594_1101B4(&blockData, chilly_waters_total_board_spaces, CREEPY_CAVERN); //place hidden blocks
 
-        if (rollValue != 0) {
-            if (roll != rollValue) {
+        //sim time to load into game
+        for (int j = 0; j < 58; j++) {
+            ADV_SEED(cur_rng_seed);
+        }
+        setSeedBeforeItemUse = 0;
+        //check if cpu has mushroom and run logic accordingly
+        if (itemSlot1 == MUSHROOM) {
+            setSeedBeforeItemUse = 1;
+            seedBeforeItemUse = cur_rng_seed;
+            if (RNGPercentChance(80) == 1) {
+                cur_rng_seed = prevSeed;
+                ADV_SEED(cur_rng_seed);
+                prevSeed = cur_rng_seed;
                 continue;
             }
         }
+
+        for (int j = 0; j < 12; j++) {
+            ADV_SEED(cur_rng_seed);
+        }
+
+        // u32 seedBeforeRoll = cur_rng_seed;
+        s32 roll = rollDice();
+        
+        if (rollValue != 0) {
+            if (roll != rollValue) {
+                cur_rng_seed = prevSeed;
+                ADV_SEED(cur_rng_seed);
+                prevSeed = cur_rng_seed;
+                continue;
+            }
+        }
+
+        seedBeforeInGameLogic = cur_rng_seed;
 
         //iterate over walk speeds and message speeds
         for (int j = 0; j < 3; j++) {
             for (int k = 0; k < 3; k++) {
                 if (DoCpuLogicCreepyCavern(roll - 1, j, k, jumpsBeforeJunction, jumpsAfterJunction) == 1) {
-                    printf("Calls: "ANSI_COLOR_GREEN"%ld"ANSI_COLOR_WHITE", Target: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i, i * 2,seedTemp, roll, speedsText[j], speedsText[k]);
+                    //// printf("Seed before roll: %08lX\n", seedBeforeRoll);
+                    // printf("Calls: "ANSI_COLOR_GREEN"%ld"ANSI_COLOR_WHITE", Target: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i, i * 2,seedTemp, roll, speedsText[j], speedsText[k]);
+                    // printf("Seed before roll: %08lX\n", seedBeforeRoll);
+                    if (setSeedBeforeItemUse == 1) {
+                        // printf("Seed before Rng Check %08lX\n", seedBeforeItemUse);
+                    }
+                    printf("Calls: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i,seedTemp, roll, speedsText[j], speedsText[k]);
                 }
-                cur_rng_seed = prevSeed;
+                cur_rng_seed = seedBeforeInGameLogic;
             }
         }
-    }    
+        cur_rng_seed = prevSeed;
+        ADV_SEED(cur_rng_seed);
+        prevSeed = cur_rng_seed;
+    }
+}
+
+void CPUGetWatchWaluigisIsland(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction, s32 itemSlot1) {
+    Blocks blockData;
+
+    u32 prevSeed = cur_rng_seed;
+    u32 seedBeforeInGameLogic;
+    u32 seedBeforeItemUse;
+    s32 setSeedBeforeItemUse = 0;
+
+    for (u32 i = 0; i < 3000; i++) {
+        //printf("CurSeed: %08lX\n", cur_rng_seed);
+        cur_rng_seed = prevSeed;
+        u32 seedTemp = cur_rng_seed;
+        blockData.coinBlockSpaceIndex = -1;
+        blockData.itemBlockSpaceIndex = -1;
+        blockData.starBlockSpaceIndex = -1;
+        func_800FC594_1101B4(&blockData, chilly_waters_total_board_spaces, CREEPY_CAVERN); //place hidden blocks
+
+        //sim time to load into game
+        for (int j = 0; j < 58; j++) {
+            ADV_SEED(cur_rng_seed);
+        }
+        setSeedBeforeItemUse = 0;
+        //check if cpu has mushroom and run logic accordingly
+        if (itemSlot1 == MUSHROOM) {
+            setSeedBeforeItemUse = 1;
+            seedBeforeItemUse = cur_rng_seed;
+            if (RNGPercentChance(80) == 1) {
+                cur_rng_seed = prevSeed;
+                ADV_SEED(cur_rng_seed);
+                prevSeed = cur_rng_seed;
+                continue;
+            }
+        }
+
+        for (int j = 0; j < 12; j++) {
+            ADV_SEED(cur_rng_seed);
+        }
+
+        // u32 seedBeforeRoll = cur_rng_seed;
+        s32 roll = rollDice();
+        
+        if (rollValue != 0) {
+            if (roll != rollValue) {
+                cur_rng_seed = prevSeed;
+                ADV_SEED(cur_rng_seed);
+                prevSeed = cur_rng_seed;
+                continue;
+            }
+        }
+
+        seedBeforeInGameLogic = cur_rng_seed;
+
+        //iterate over walk speeds and message speeds
+        // for (int j = 0; j < 3; j++) {
+        //     for (int k = 0; k < 3; k++) {
+        //         if (DoCpuLogicWaluigisIsland(roll - 1, j, k, jumpsBeforeJunction, jumpsAfterJunction) == 1) {
+        //             //// printf("Seed before roll: %08lX\n", seedBeforeRoll);
+        //             // printf("Calls: "ANSI_COLOR_GREEN"%ld"ANSI_COLOR_WHITE", Target: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i, i * 2,seedTemp, roll, speedsText[j], speedsText[k]);
+        //             // printf("Seed before roll: %08lX\n", seedBeforeRoll);
+        //             if (setSeedBeforeItemUse == 1) {
+        //                 // printf("Seed before Rng Check %08lX\n", seedBeforeItemUse);
+        //             }
+        //             printf("Calls: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i,seedTemp, roll, speedsText[j], speedsText[k]);
+        //         }
+        //         cur_rng_seed = seedBeforeInGameLogic;
+        //     }
+        // }
+        cur_rng_seed = prevSeed;
+        ADV_SEED(cur_rng_seed);
+        prevSeed = cur_rng_seed;
+    }
 }
 
 s32 callAmountBetweenSpace[] = {6, 11, 16};
@@ -511,6 +765,8 @@ s32 DoCpuLogicChillyWaters(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 j
 s32 DoCpuLogicDeepBlooperSea(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction) {
     s32 ret = 0;
     int rngAdvancements = 0;
+    u32 seedBeforeJunction = 0;
+    u32 seedBeforeItemSpaceEventDecision = 0;
 
     switch(rollIndex) {
         case 9:
@@ -541,12 +797,12 @@ s32 DoCpuLogicDeepBlooperSea(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32
 
             //cpu decides direction
             //printf("Seed before junction: %08lX\n", cur_rng_seed);
+            seedBeforeJunction = cur_rng_seed;
             if (RNGPercentChance(70) == 1) { //CPU went left
                 return 0;
             }
-            //cpu decision time (cpu chose the way the arrow was already facing)
-            //TODO: figure out time if cpu needs to swap directions
 
+            //cpu decision time (cpu chose the way the arrow was already facing)
             //42 if same direction, 51 if not
             for (int i = 0; i < 51; i++) {
                 ADV_SEED(cur_rng_seed);
@@ -576,15 +832,17 @@ s32 DoCpuLogicDeepBlooperSea(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32
                 ADV_SEED(cur_rng_seed);
             }
             //printf("Seed before Item Space Event: %08lX\n", cur_rng_seed);
+            seedBeforeItemSpaceEventDecision = cur_rng_seed;
+            //printf("Seed before junction: %08lX, Seed Before Item Space: %08lX\n", seedBeforeJunction, seedBeforeItemSpaceEventDecision);
             ret = HandleLogicFromItemSpace(messageSpeed);
             break;
     }
     return ret;
 }
 
-s32 DoCpuLogicSpinyDesert(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction) {
+s32 DoCpuLogicSpinyDesert(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction, s32 itemSlot1) {
     int rngAdvancements;
-
+    u32 seedBeforeJunction = 0;
     switch (rollIndex) {
         case 9:
         case 8:
@@ -599,9 +857,22 @@ s32 DoCpuLogicSpinyDesert(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 ju
 
             //cpu decides direction
             //printf("Seed before junction: %08lX\n", cur_rng_seed);
-            if (RNGPercentChance(60) == 0) { //changes from base direction
-                return 0;
+            seedBeforeJunction = cur_rng_seed;
+
+            if (itemSlot1 == SKELETON_KEY) {
+                // if (RNGPercentChance(60) == 0) {
+                //     return 0;
+                // }
+                //unknown what this should actually be. pick high number that should handle all cases?
+                if (RNGPercentChance(60) == 1) {
+                    return 0;
+                }           
+            } else {
+                if (RNGPercentChance(60) == 1) {
+                    return 0;
+                }
             }
+
             //cpu decision time (cpu chose the way the arrow was already facing)
             //Note: Arrow always starts facing left?
 
@@ -628,18 +899,13 @@ s32 DoCpuLogicSpinyDesert(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 ju
 
             for (int i = 0; i < rngAdvancements; i++) {
                 ADV_SEED(cur_rng_seed);
-            }
-
-            //NOTE! For reasons unknown, advance 2 extra times??
-            // for (int i = 0; i < 2; i++) {
-            //     ADV_SEED(cur_rng_seed);
-            // }
-        
+            }     
 
             //player turn to space
             for (int i = 0; i < 8; i++) {
                 ADV_SEED(cur_rng_seed);
             }
+            // printf("seedBeforeJunction %08lX\n", seedBeforeJunction);
             return HandleLogicFromItemSpace(messageSpeed);  
     }
     return 0;
