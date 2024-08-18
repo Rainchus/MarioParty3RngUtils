@@ -329,10 +329,18 @@ s16 RunDecisionTree(DecisionTreeNonLeafNode* currentNode, s32 nodeTotal) {
             }
             continue;
         }
-        if ((s32)var_s1->node_data2.node_data < 0) {
+        //original n64 implementation; checks for a pointer by doing < 0 which will not work on a pc
+        // if ((s32)var_s1->node_data2.node_data < 0) {
+        //     var_s1 = (DecisionTreeNonLeafNode*)(var_s1->node_data2.node_data - 1);
+        //     continue;
+        // }
+
+        //update for pc by adding a new pointer struct member
+        if (var_s1->isPointer == 1) {
             var_s1 = (DecisionTreeNonLeafNode*)(var_s1->node_data2.node_data - 1);
             continue;
         }
+
         switch (GetPlayerStruct(-1)->cpu_difficulty) {
             case 0:
                 var_v0_7 = var_s1->node_data2.data_u8[3] & 0x7F;

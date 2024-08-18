@@ -53,17 +53,20 @@ DecisionTreeNonLeafNode ChillyWatersJunction0Nodes[] = {
     {
         .type = 0x02,
         .node_data1.data = 0x00000001,
-        .node_data2.data = 0x1C96A846
+        .node_data2.data = 0x1C96A846,
+        .isPointer = 0,
     },
     {
         .type = 0x02,
         .node_data1.data = 0x00000042,
-        .node_data2.data = 0x0C96A846
+        .node_data2.data = 0x0C96A846,
+        .isPointer = 0,
     },
     {
         .type = 0,
         .node_data1.data = 0x00,
-        .node_data2.data = 0x064C9932
+        .node_data2.data = 0x064C9932,
+        .isPointer = 0,
     }
 };
 
@@ -71,12 +74,14 @@ DecisionTreeNonLeafNode DeepBlooperSeaRandomNode[] = {
     {
         .type = 0x03,
         .node_data1.data = 0x00000140,
-        .node_data2.data = 0x1B54233C
+        .node_data2.data = 0x1B54233C,
+        .isPointer = 0,
         },
     {
         .type = 0,
         .node_data1.data = 0,
-        .node_data2.data = 0x0B54233C
+        .node_data2.data = 0x0B54233C,
+        .isPointer = 0,
     }
 };
 
@@ -85,12 +90,14 @@ DecisionTreeNonLeafNode DeepBlooperSeaJunction0Nodes[] = {
     {
         .type = 0x02,
         .node_data1.data = 0x00000001,
-        .node_data2.data = 0x1B54233C
+        .node_data2.data = 0x1B54233C,
+        .isPointer = 0,
     },
     {
         .type = 0x02,
         .node_data1.data = 0x00000090,
-        .node_data2.node_data = DeepBlooperSeaRandomNode //this shouldnt ever actually activate...i think? (if it does, an error will be thrown)
+        .node_data2.node_data = DeepBlooperSeaRandomNode,
+        .isPointer = 1,
     },
     //is this needed?
     // {
@@ -106,23 +113,27 @@ DecisionTreeNonLeafNode WoodyWoodsJunction0Nodes[] = {
     {
         .type = 0x02,
         .node_data1.data = 0x00000080,
-        .node_data2.data = 0x1B54233C
+        .node_data2.data = 0x1B54233C,
+        .isPointer = 0,
     },
 
     {
         .type = 0x00,
         .node_data1.data = 0x00000000,
-        .node_data2.data = 0x0B54233C
+        .node_data2.data = 0x0B54233C,
+        .isPointer = 0,
     },
     {
         .type = 0x02,
         .node_data1.data = 0x00,
-        .node_data2.data = 0x1B54233C
+        .node_data2.data = 0x1B54233C,
+        .isPointer = 0,
     },
     {
         .type = 0x00,
         .node_data1.data = 0x00,
-        .node_data2.data = 0x064C9932
+        .node_data2.data = 0x064C9932,
+        .isPointer = 0,
     }
 };
 
@@ -131,12 +142,14 @@ DecisionTreeNonLeafNode CreepyCavernJunction4Nodes[] = {
     {
         .type = 0x03,
         .node_data1.data = 0x00000001,
-        .node_data2.data = 0x1C96A33C
+        .node_data2.data = 0x1C96A33C,
+        .isPointer = 0,
     },
     {
         .type = 0x00,
         .node_data1.data = 0x00000000,
-        .node_data2.data = 0x0C96A33C
+        .node_data2.data = 0x0C96A33C,
+        .isPointer = 0,
     },
 };
 
@@ -145,12 +158,14 @@ DecisionTreeNonLeafNode CreepyCavernJunction3Nodes[] = {
     {
         .type = 0x03,
         .node_data1.data = 0x00000001,
-        .node_data2.data = 0x1C96A33C
+        .node_data2.data = 0x1C96A33C,
+        .isPointer = 0,
     },
     {
         .type = 0x00,
         .node_data1.data = 0x00000000,
-        .node_data2.data = 0x0C96A33C
+        .node_data2.data = 0x0C96A33C,
+        .isPointer = 0,
     },
 };
 
@@ -159,17 +174,20 @@ DecisionTreeNonLeafNode CreepyCavernJunction2Nodes[] = {
     {
         .type = 0x04,
         .node_data1.data = 0x00300000,
-        .node_data2.data = 0x1BF6A33C
+        .node_data2.data = 0x1BF6A33C,
+        .isPointer = 0,
     },
     {
         .type = 0x03,
         .node_data1.data = 0x00000004,
-        .node_data2.data = 0x1C96A33C
+        .node_data2.data = 0x1C96A33C,
+        .isPointer = 0,
     },
     {
         .type = 0x00,
         .node_data1.data = 0x00000000,
-        .node_data2.data = 0x0C96A33C
+        .node_data2.data = 0x0C96A33C,
+        .isPointer = 0,
     },
 };
 
@@ -178,12 +196,14 @@ DecisionTreeNonLeafNode CreepyCavernJunction1Nodes[] = {
     {
         .type = 0x02,
         .node_data1.data = 0x000000F0,
-        .node_data2.data = 0x1BF6A33C
+        .node_data2.data = 0x1BF6A33C,
+        .isPointer = 0,
     },
     {
         .type = 0x02,
         .node_data1.data = 0x00000003,
-        .node_data2.data = 0x0BF6A33C
+        .node_data2.data = 0x0BF6A33C,
+        .isPointer = 0,
     },
     //hopefully this is enough node data...
 };
@@ -209,19 +229,22 @@ DecisionTreeNonLeafNode CreepyCavernJunction0Nodes[] = {
     {
         .type = 0x08,
         .node_data1.data = 0x00000001,
-        .node_data2.node_data = CreepyCavernJunction1Nodes //0x8011D2F0
+        .node_data2.node_data = CreepyCavernJunction1Nodes, //0x8011D2F0
+        .isPointer = 1,
     },
 
     {
         .type = 0x02,
         .node_data1.data = 0x00000001,
-        .node_data2.node_data = CreepyCavernJunction2Nodes //0x8011D350
+        .node_data2.node_data = CreepyCavernJunction2Nodes, //0x8011D350
+        .isPointer = 1,
     },
 
     {
         .type = 0x02,
         .node_data1.data = 0x00000002,
-        .node_data2.node_data = CreepyCavernJunction3Nodes //0x8011D374
+        .node_data2.node_data = CreepyCavernJunction3Nodes, //0x8011D374
+        .isPointer = 1,
     },
 
     // {

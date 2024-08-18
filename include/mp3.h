@@ -62,9 +62,10 @@ typedef struct DecisionTreeNonLeafNode {
     } node_data1;
     union {
         u32 data;
-        s32 *node_data;
+        struct DecisionTreeNonLeafNode *node_data;
         u8 data_u8[4];
     } node_data2;
+    u32 isPointer;
 } DecisionTreeNonLeafNode;
 
 
