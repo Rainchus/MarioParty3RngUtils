@@ -12,7 +12,12 @@ s32 itemIDAmounts[148]; //ARRAY_COUNT(spaces)
 //on chilly waters this array is blank, but on desert map it's not?
 s16 D_801052B8[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; 
 
-u16 chilly_waters_total_board_spaces = 0x94; //chilly waters has 0x94 spaces (D_80105210)
+u16 chilly_waters_total_board_spaces = 0x94; //(D_80105210)
+u16 deep_blooper_sea_board_spaces = 0x8A; //(D_80105210)
+u16 spiny_desert_board_spaces = 0x8F; //(D_80105210)
+u16 woody_woods_board_spaces = 0x90; //(D_80105210)
+u16 creepy_cavern_total_board_spaces = 0x98; //(D_80105210)
+
 s16 D_801054F8 = 0x08; //in chilly waters, this is 0x08 at first (does this change?)
 s16 D_801054B6 = 0; //no idea, is zero on chilly waters start
 
@@ -48,7 +53,7 @@ void find_hidden_block(s32 cpuRoll, s32 cpuWantedSpaceIndex) {
             }
             printf("\nStarting Seed: %08lX\n", prevRngSeed);
             printf("Seed before dice roll: %08lX\n", cur_rng_seed);
-            s32 roll = rollDice();
+            s32 roll = RollDice();
             // printf("Variable roll is %d\n", roll);
             if (roll != cpuRoll) {
                 prevRngSeed = cur_rng_seed;

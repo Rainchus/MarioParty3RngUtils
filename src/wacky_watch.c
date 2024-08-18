@@ -35,6 +35,10 @@ extern s16 D_800D03FC; //total coin blocks placed
 extern s16 D_800CE208; //total star blocks placed
 extern s16 D_800CDD68; //total item blocks placed
 extern u16 chilly_waters_total_board_spaces;
+extern u16 deep_blooper_sea_board_spaces;
+extern u16 spiny_desert_board_spaces;
+extern u16 woody_woods_board_spaces;
+extern u16 creepy_cavern_total_board_spaces;
 
 s32 DoCpuLogicGeneric(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 numOfJumps);
 s32 DoCpuLogicChillyWaters(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction);
@@ -42,6 +46,200 @@ s32 DoCpuLogicDeepBlooperSea(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32
 s32 DoCpuLogicSpinyDesert(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction, s32 itemSlot1);
 s32 DoCpuLogicWoodyWoods1(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction);
 s32 DoCpuLogicCreepyCavern(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 jumpsBeforeJunction, s32 jumpsAfterJunction);
+int aiMain(DecisionTreeNonLeafNode* node, s32 nodeCount, u32 seed);
+
+//decision tree nodes for chilly waters first junction
+DecisionTreeNonLeafNode ChillyWatersJunction0Nodes[] = {
+    {
+        .type = 0x02,
+        .node_data1.data = 0x00000001,
+        .node_data2.data = 0x1C96A846
+    },
+    {
+        .type = 0x02,
+        .node_data1.data = 0x00000042,
+        .node_data2.data = 0x0C96A846
+    },
+    {
+        .type = 0,
+        .node_data1.data = 0x00,
+        .node_data2.data = 0x064C9932
+    }
+};
+
+DecisionTreeNonLeafNode DeepBlooperSeaRandomNode[] = {
+    {
+        .type = 0x03,
+        .node_data1.data = 0x00000140,
+        .node_data2.data = 0x1B54233C
+        },
+    {
+        .type = 0,
+        .node_data1.data = 0,
+        .node_data2.data = 0x0B54233C
+    }
+};
+
+//decision tree nodes for deep blooper sea first junction
+DecisionTreeNonLeafNode DeepBlooperSeaJunction0Nodes[] = {
+    {
+        .type = 0x02,
+        .node_data1.data = 0x00000001,
+        .node_data2.data = 0x1B54233C
+    },
+    {
+        .type = 0x02,
+        .node_data1.data = 0x00000090,
+        .node_data2.node_data = DeepBlooperSeaRandomNode //this shouldnt ever actually activate...i think? (if it does, an error will be thrown)
+    },
+    //is this needed?
+    // {
+    //     .type = 0,
+    //     .node_data1.data = 0x00,
+    //     .node_data2.data = 0x064C9932
+    // }
+};
+
+//decision tree nodes for woody woods first junction
+//TODO: is this actually enough nodes?
+DecisionTreeNonLeafNode WoodyWoodsJunction0Nodes[] = {
+    {
+        .type = 0x02,
+        .node_data1.data = 0x00000080,
+        .node_data2.data = 0x1B54233C
+    },
+
+    {
+        .type = 0x00,
+        .node_data1.data = 0x00000000,
+        .node_data2.data = 0x0B54233C
+    },
+    {
+        .type = 0x02,
+        .node_data1.data = 0x00,
+        .node_data2.data = 0x1B54233C
+    },
+    {
+        .type = 0x00,
+        .node_data1.data = 0x00,
+        .node_data2.data = 0x064C9932
+    }
+};
+
+//0x8011D338
+DecisionTreeNonLeafNode CreepyCavernJunction4Nodes[] = {
+    {
+        .type = 0x03,
+        .node_data1.data = 0x00000001,
+        .node_data2.data = 0x1C96A33C
+    },
+    {
+        .type = 0x00,
+        .node_data1.data = 0x00000000,
+        .node_data2.data = 0x0C96A33C
+    },
+};
+
+//0x8011D374
+DecisionTreeNonLeafNode CreepyCavernJunction3Nodes[] = {
+    {
+        .type = 0x03,
+        .node_data1.data = 0x00000001,
+        .node_data2.data = 0x1C96A33C
+    },
+    {
+        .type = 0x00,
+        .node_data1.data = 0x00000000,
+        .node_data2.data = 0x0C96A33C
+    },
+};
+
+//0x8011D350
+DecisionTreeNonLeafNode CreepyCavernJunction2Nodes[] = {
+    {
+        .type = 0x04,
+        .node_data1.data = 0x00300000,
+        .node_data2.data = 0x1BF6A33C
+    },
+    {
+        .type = 0x03,
+        .node_data1.data = 0x00000004,
+        .node_data2.data = 0x1C96A33C
+    },
+    {
+        .type = 0x00,
+        .node_data1.data = 0x00000000,
+        .node_data2.data = 0x0C96A33C
+    },
+};
+
+//0x8011D2F0
+DecisionTreeNonLeafNode CreepyCavernJunction1Nodes[] = {
+    {
+        .type = 0x02,
+        .node_data1.data = 0x000000F0,
+        .node_data2.data = 0x1BF6A33C
+    },
+    {
+        .type = 0x02,
+        .node_data1.data = 0x00000003,
+        .node_data2.data = 0x0BF6A33C
+    },
+    //hopefully this is enough node data...
+};
+
+//decision tree nodes for woody woods first junction
+//TODO: is this actually enough nodes?
+//starts at 8011D3D4
+DecisionTreeNonLeafNode CreepyCavernJunction0Nodes[] = {
+    // //temp test
+    // {
+    //     .type = 0x02,
+    //     .node_data1.data = 0x000000F0,
+    //     .node_data2.data = 0x1BF6A33C
+    // },
+    // {
+    //     .type = 0x02,
+    //     .node_data1.data = 0x00000003,
+    //     .node_data2.data = 0x0BF6A33C
+    // },
+    //end of temp test
+
+    
+    {
+        .type = 0x08,
+        .node_data1.data = 0x00000001,
+        .node_data2.node_data = CreepyCavernJunction1Nodes //0x8011D2F0
+    },
+
+    {
+        .type = 0x02,
+        .node_data1.data = 0x00000001,
+        .node_data2.node_data = CreepyCavernJunction2Nodes //0x8011D350
+    },
+
+    {
+        .type = 0x02,
+        .node_data1.data = 0x00000002,
+        .node_data2.node_data = CreepyCavernJunction3Nodes //0x8011D374
+    },
+
+    // {
+    //     .type = 0x00,
+    //     .node_data1.data = 0x00000000,
+    //     .node_data2.data = 0x0B54233C
+    // },
+    // {
+    //     .type = 0x02,
+    //     .node_data1.data = 0x00,
+    //     .node_data2.data = 0x1B54233C
+    // },
+    // {
+    //     .type = 0x00,
+    //     .node_data1.data = 0x00,
+    //     .node_data2.data = 0x064C9932
+    // }
+};
 
 char* speedsText[] = {
     "FAST",
@@ -63,7 +261,7 @@ void CPUGetWatchGeneric(s32 rollValue, u32 numOfJumps) {
         //printf("CurSeed: %08lX\n", cur_rng_seed);
         cur_rng_seed = prevSeed;
         u32 seedTemp = cur_rng_seed;
-        s32 roll = rollDice();
+        s32 roll = RollDice();
         
         prevSeed = cur_rng_seed;
 
@@ -77,7 +275,7 @@ void CPUGetWatchGeneric(s32 rollValue, u32 numOfJumps) {
         for (int j = 0; j < 3; j++) {
             for (int k = 0; k < 3; k++) {
                 if (DoCpuLogicGeneric(roll - 1, j, k, numOfJumps) == 1) {
-                    printf("Calls: "ANSI_COLOR_GREEN"%ld"ANSI_COLOR_WHITE", Target: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i, i * 2,seedTemp, roll, speedsText[j], speedsText[k]);
+                    printf("Calls: "ANSI_COLOR_GREEN"%ld"ANSI_COLOR_WHITE", Target: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08X, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i, i * 2,seedTemp, roll, speedsText[j], speedsText[k]);
                 }
                 cur_rng_seed = prevSeed;
             }
@@ -85,14 +283,14 @@ void CPUGetWatchGeneric(s32 rollValue, u32 numOfJumps) {
     }
 }
 
-void CPUGetWatchChillyWaters(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction) {
+void CPUGetWatchChillyWaters(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction, s32 itemSlot1) {
     Blocks blockData;
 
     u32 prevSeed = cur_rng_seed;
     u32 seedBeforeInGameLogic;
 
     for (u32 i = 0; i < 3000; i++) {
-        //printf("CurSeed: %08lX\n", cur_rng_seed);
+        //printf("CurSeed: %08X\n", cur_rng_seed);
         cur_rng_seed = prevSeed;
         u32 seedTemp = cur_rng_seed;
         blockData.coinBlockSpaceIndex = -1;
@@ -105,9 +303,9 @@ void CPUGetWatchChillyWaters(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAf
             ADV_SEED(cur_rng_seed);
         }
 
-        // u32 seedBeforeRoll = cur_rng_seed;
-        
-        s32 roll = rollDice();
+        u32 seedBeforeRoll = cur_rng_seed;
+        //printf("Seed before roll: %08X\n", seedBeforeRoll);
+        s32 roll = RollDice();
         
 
         if (rollValue != 0) {
@@ -126,8 +324,8 @@ void CPUGetWatchChillyWaters(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAf
             for (int k = 0; k < 3; k++) {
                 if (DoCpuLogicChillyWaters(roll - 1, j, k, jumpsBeforeJunction, jumpsAfterJunction) == 1) {
                     //// printf("Seed before roll: %08lX\n", seedBeforeRoll);
-                    // printf("Calls: "ANSI_COLOR_GREEN"%ld"ANSI_COLOR_WHITE", Target: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i, i * 2,seedTemp, roll, speedsText[j], speedsText[k]);
-                    printf("Calls: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i,seedTemp, roll, speedsText[j], speedsText[k]);
+                    //printf("Calls: "ANSI_COLOR_GREEN"%ld"ANSI_COLOR_WHITE", Target: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i, i * 2,seedTemp, roll, speedsText[j], speedsText[k]);
+                    printf("Calls: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i, prevSeed, roll, speedsText[j], speedsText[k]);
                 }
                 cur_rng_seed = seedBeforeInGameLogic;
             }
@@ -153,7 +351,7 @@ void CPUGetWatchDeepBlooperSea(s32 rollValue, s32 jumpsBeforeJunction, s32 jumps
         blockData.coinBlockSpaceIndex = -1;
         blockData.itemBlockSpaceIndex = -1;
         blockData.starBlockSpaceIndex = -1;
-        func_800FC594_1101B4(&blockData, chilly_waters_total_board_spaces, DEEP_BLOOPER_SEA); //place hidden blocks
+        func_800FC594_1101B4(&blockData, deep_blooper_sea_board_spaces, DEEP_BLOOPER_SEA); //place hidden blocks
 
         //sim time to load into game
         for (int j = 0; j < 58; j++) {
@@ -177,7 +375,7 @@ void CPUGetWatchDeepBlooperSea(s32 rollValue, s32 jumpsBeforeJunction, s32 jumps
         }
 
         // u32 seedBeforeRoll = cur_rng_seed;
-        s32 roll = rollDice();
+        s32 roll = RollDice();
         
         if (rollValue != 0) {
             if (roll != rollValue) {
@@ -225,7 +423,7 @@ void CPUGetWatchSpinyDesert(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAft
         blockData.coinBlockSpaceIndex = -1;
         blockData.itemBlockSpaceIndex = -1;
         blockData.starBlockSpaceIndex = -1;
-        func_800FC594_1101B4(&blockData, chilly_waters_total_board_spaces, SPINY_DESERT); //place hidden blocks
+        func_800FC594_1101B4(&blockData, spiny_desert_board_spaces, SPINY_DESERT); //place hidden blocks
 
         //sim time to load into game
         for (int j = 0; j < 58; j++) {
@@ -249,7 +447,7 @@ void CPUGetWatchSpinyDesert(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAft
         }
 
         // u32 seedBeforeRoll = cur_rng_seed;
-        s32 roll = rollDice();
+        s32 roll = RollDice();
         
         if (rollValue != 0) {
             if (roll != rollValue) {
@@ -302,7 +500,7 @@ void CPUGetWatchWoodyWoods(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfte
         blockData.coinBlockSpaceIndex = -1;
         blockData.itemBlockSpaceIndex = -1;
         blockData.starBlockSpaceIndex = -1;
-        func_800FC594_1101B4(&blockData, chilly_waters_total_board_spaces, WOODY_WOODS); //place hidden blocks
+        func_800FC594_1101B4(&blockData, woody_woods_board_spaces, WOODY_WOODS); //place hidden blocks
 
         //sim time to load into game
         for (int j = 0; j < 58; j++) {
@@ -325,8 +523,8 @@ void CPUGetWatchWoodyWoods(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfte
             ADV_SEED(cur_rng_seed);
         }
 
-        // u32 seedBeforeRoll = cur_rng_seed;
-        s32 roll = rollDice();
+        u32 seedBeforeRoll = cur_rng_seed;
+        s32 roll = RollDice();
         
         if (rollValue != 0) {
             if (roll != rollValue) {
@@ -343,7 +541,7 @@ void CPUGetWatchWoodyWoods(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfte
         for (int j = 0; j < 3; j++) {
             for (int k = 0; k < 3; k++) {
                 if (DoCpuLogicWoodyWoods1(roll - 1, j, k, jumpsBeforeJunction, jumpsAfterJunction) == 1) {
-                    //// printf("Seed before roll: %08lX\n", seedBeforeRoll);
+                    printf("Seed before roll: %08lX\n", seedBeforeRoll);
                     // printf("Calls: "ANSI_COLOR_GREEN"%ld"ANSI_COLOR_WHITE", Target: "ANSI_COLOR_YELLOW"%ld"ANSI_COLOR_WHITE", Seed: %08lX, Roll: "ANSI_COLOR_MAGENTA"%ld"ANSI_COLOR_WHITE" \t| Walk: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE" \t| Message: "ANSI_COLOR_RED"%s"ANSI_COLOR_WHITE"\n", i, i * 2,seedTemp, roll, speedsText[j], speedsText[k]);
                     // printf("Seed before roll: %08lX\n", seedBeforeRoll);
                     if (setSeedBeforeItemUse == 1) {
@@ -360,6 +558,7 @@ void CPUGetWatchWoodyWoods(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfte
     }
 }
 
+//this is broken, rip
 void CPUGetWatchCreepyCavern(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAfterJunction, s32 itemSlot1) {
     Blocks blockData;
 
@@ -375,7 +574,7 @@ void CPUGetWatchCreepyCavern(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAf
         blockData.coinBlockSpaceIndex = -1;
         blockData.itemBlockSpaceIndex = -1;
         blockData.starBlockSpaceIndex = -1;
-        func_800FC594_1101B4(&blockData, chilly_waters_total_board_spaces, CREEPY_CAVERN); //place hidden blocks
+        func_800FC594_1101B4(&blockData, creepy_cavern_total_board_spaces, CREEPY_CAVERN); //place hidden blocks
 
         //sim time to load into game
         for (int j = 0; j < 58; j++) {
@@ -399,7 +598,7 @@ void CPUGetWatchCreepyCavern(s32 rollValue, s32 jumpsBeforeJunction, s32 jumpsAf
         }
 
         // u32 seedBeforeRoll = cur_rng_seed;
-        s32 roll = rollDice();
+        s32 roll = RollDice();
         
         if (rollValue != 0) {
             if (roll != rollValue) {
@@ -472,7 +671,7 @@ void CPUGetWatchWaluigisIsland(s32 rollValue, s32 jumpsBeforeJunction, s32 jumps
         }
 
         // u32 seedBeforeRoll = cur_rng_seed;
-        s32 roll = rollDice();
+        s32 roll = RollDice();
         
         if (rollValue != 0) {
             if (roll != rollValue) {
@@ -724,10 +923,10 @@ s32 DoCpuLogicChillyWaters(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 j
 
             DoUpToJunctionAdvancements(rngAdvancements);
 
-            //cpu decides direction
-            if (RNGPercentChance(50) == 0) { //CPU went up
+            if (aiMain(ChillyWatersJunction0Nodes, ARRAY_COUNT(ChillyWatersJunction0Nodes), cur_rng_seed) == 1) {
                 return 0;
             }
+            
             //cpu decision time (cpu chose the way the arrow was already facing)
             //TODO: figure out time if cpu needs to swap directions
             for (int i = 0; i < 42; i++) {
@@ -795,10 +994,10 @@ s32 DoCpuLogicDeepBlooperSea(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32
 
             DoUpToJunctionAdvancements(rngAdvancements);
 
-            //cpu decides direction
-            //printf("Seed before junction: %08lX\n", cur_rng_seed);
-            seedBeforeJunction = cur_rng_seed;
-            if (RNGPercentChance(70) == 1) { //CPU went left
+            // cpu decides direction
+            // printf("Seed before junction: %08lX\n", cur_rng_seed);
+            // seedBeforeJunction = cur_rng_seed;
+            if (aiMain(DeepBlooperSeaJunction0Nodes, ARRAY_COUNT(DeepBlooperSeaJunction0Nodes), cur_rng_seed) == 0) {
                 return 0;
             }
 
@@ -928,10 +1127,14 @@ s32 DoCpuLogicWoodyWoods1(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 ju
             //cpu decides direction
             //printf("Seed before junction: %08lX\n", cur_rng_seed);
 
-            //easy difficulty decision
-            if (RNGPercentChance(60) == 1) { //changes from base direction
+            if (aiMain(WoodyWoodsJunction0Nodes, ARRAY_COUNT(WoodyWoodsJunction0Nodes), cur_rng_seed) == 0) {
                 return 0;
             }
+
+            // //easy difficulty decision
+            // if (RNGPercentChance(60) == 1) { //changes from base direction
+            //     return 0;
+            // }
 
             //for normal
             // if (RNGPercentChance(70) == 1) { //changes from base direction
@@ -1011,11 +1214,18 @@ s32 DoCpuLogicCreepyCavern(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 j
             //cpu decides direction
             //printf("Seed before junction: %08lX\n", cur_rng_seed);
 
-            //easy difficulty decision
-            if (RNGPercentChance(60) == 1) { //cpu didnt change direction, exit
+            // //easy difficulty decision
+            // if (RNGPercentChance(60) == 1) { //cpu didnt change direction, exit
+            //     return 0;
+            // }
+
+            //this node is kind of weird and breaks the normal ARRAY_COUNT macro from working
+            //have to hardcode the node count to an arbitrary number
+            if (aiMain(CreepyCavernJunction0Nodes, 10, cur_rng_seed) == 1) {
                 return 0;
             }
 
+            //change direction of the junction
             for (int i = 0; i < 51; i++) {
                 ADV_SEED(cur_rng_seed);
             }
@@ -1030,7 +1240,7 @@ s32 DoCpuLogicCreepyCavern(s32 rollIndex, s32 walkSpeed, s32 messageSpeed, s32 j
             }
 
             //printf("Seed before item space event: %08lX\n", cur_rng_seed);
-            return HandleLogicFromItemSpace(messageSpeed);  
+            return HandleLogicFromItemSpace(messageSpeed);
     }
     return 0;
 }

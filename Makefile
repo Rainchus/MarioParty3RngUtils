@@ -1,4 +1,4 @@
-# Makefile to compile all C files in the "src" directory into an executable
+# Makefile to compile all C files in the "src" directory and its subdirectories into an executable
 
 CC = gcc
 CFLAGS = -Wall -O3
@@ -6,7 +6,7 @@ INCLUDES = -Iinclude
 SRCDIR = src
 BUILD_DIR = build
 TARGET = mp3_rng_util
-SOURCES = $(wildcard $(SRCDIR)/*.c)
+SOURCES = $(shell find $(SRCDIR) -name '*.c')
 
 # Object files (generated in the "build" directory)
 OBJECTS = $(patsubst $(SRCDIR)/%.c,$(BUILD_DIR)/%.o,$(SOURCES))
@@ -20,6 +20,7 @@ $(TARGET): $(OBJECTS)
 
 # Rule to compile C source files into object files
 $(BUILD_DIR)/%.o: $(SRCDIR)/%.c | $(BUILD_DIR)
+	@mkdir -p $(@D) # Ensure the build directory exists
 	@$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 # Create the "build/" directory if it doesn't exist

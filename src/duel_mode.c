@@ -40,7 +40,7 @@ s32 DecidePlayerOrder(void) {
 void SimDuelMode3(void) {
     for (u32 i = 0; i < 100000; i++) {
         u32 startSeed = cur_rng_seed;
-        u8 diceRoll1 = rollDice();
+        u8 diceRoll1 = RollDice();
 
         if (diceRoll1 != 9) {
             cur_rng_seed = startSeed;
@@ -58,7 +58,7 @@ void SimDuelMode2(void) {
     u32 cpuStartDiceRoll = 0;
     for (u32 i = 0; i < 20000; i++){ 
         prevSeed = cur_rng_seed;
-        u8 cpuReverseDiceRoll = rollDice();
+        u8 cpuReverseDiceRoll = RollDice();
         if (cpuReverseDiceRoll == 1 || cpuReverseDiceRoll == 2 || cpuReverseDiceRoll == 3) {
             if (cpuReverseDiceRoll == 1) {
                 for (s32 j = 0; j < 274; j++) {
@@ -74,7 +74,7 @@ void SimDuelMode2(void) {
                 }
             }
 
-            u8 playerDiceRoll = rollDice();
+            u8 playerDiceRoll = RollDice();
             u8 temp = 4 - cpuReverseDiceRoll;
             if (playerDiceRoll == temp) {
                 if (chain == 0) {
@@ -107,7 +107,7 @@ void SimDuelMode(void) {
     //     u32 chain = 0;
     //     u32 prevRequirements = 0;
     //     u32 startSeed = cur_rng_seed;
-    //     u8 diceRoll1 = rollDice();
+    //     u8 diceRoll1 = RollDice();
 
     //     if (diceRoll1 != 9) {
     //         cur_rng_seed = startSeed;
@@ -157,7 +157,7 @@ void SimDuelMode(void) {
     // u8 diceRoll2Value = 0;
     // for (s32 i = 0; i < 100000; i++) {
     //     u32 prevSeed = cur_rng_seed;
-    //     u8 diceRollValue = rollDice();
+    //     u8 diceRollValue = RollDice();
     //     if (prevDiceRoll == diceRollValue && prevDiceRoll == 9 && diceRollValue == 9) {
     //         for (s32 j = 0; j < 94; j++) {
     //             ADV_SEED(cur_rng_seed);
@@ -174,7 +174,7 @@ void SimDuelMode(void) {
     //             ADV_SEED(cur_rng_seed);
     //         }
 
-    //         diceRoll2Value = rollDice();
+    //         diceRoll2Value = RollDice();
 
     //         if (diceRoll2Value < 4) {
     //             if (chain == 0) {

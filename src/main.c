@@ -28,6 +28,10 @@ void cpu_item_space_watch_creepy_cavern(int argc, char* argv[]);
 void cpu_item_space_watch_generic(int argc, char* argv[]);
 void hidden_block_gen_main(void);
 void find_hidden_block(s32 cpuRoll, s32 cpuWantedSpaceIndex);
+void SetStarSpawnDataChillyWaters(s32 index);
+void SetStarSpawnDataDeepBlooperSea(s32 index);
+void SetStarSpawnDataWoodyWoods(s32 index);
+void SetStarSpawnDataCreepyCavern(s32 index);
 
 void tempFunction(char *argv[]) {
     char* hexValue1 = argv[2];
@@ -40,7 +44,7 @@ void tempFunction(char *argv[]) {
     int res2 = atoi(hexValue1);
     for (s32 i = 0; i < 3000; i++) {
         u32 prevSeed = cur_rng_seed;
-        u8 diceRollValue = rollDice();
+        u8 diceRollValue = RollDice();
         if (i < 800) {
             continue;
         }
@@ -55,9 +59,30 @@ void tempFunction(char *argv[]) {
     }
 }
 
-int main(int argc, char *argv[]) {
-    if (argc == 1) {
-        printf(
+// Structure to hold command and function pointer
+typedef struct {
+    const char *cmd;
+    void (*func)(int, char**);
+} Command;
+
+// Array of commands and corresponding functions
+Command commands[] = {
+    {"--simduel", simduel},
+    {"--simduel2", simduel2},
+    {"--simduel3", simduel3},
+    {"--rngadv", rngadv},
+    {"--roll_chain", rollchain},
+    {"--cpu_watch_chilly_waters", cpu_item_space_watch_chilly_waters},
+    {"--cpu_watch_deep_blooper_sea", cpu_item_space_watch_deep_blooper_sea},
+    {"--cpu_watch_woody_woods", cpu_item_space_watch_woody_woods},
+    {"--cpu_watch_creepy_cavern", cpu_item_space_watch_creepy_cavern},
+    {"--cpu_watch_generic", cpu_item_space_watch_generic},
+    {"--hiddenblockgen", hiddenblockgen},
+    {NULL, NULL} // Sentinel value to mark the end of the array
+};
+
+void print_help() {
+    printf(
         "Args:\n"
         "--simduel\n"
         "--simduel2\n"
@@ -66,57 +91,30 @@ int main(int argc, char *argv[]) {
         "--roll_chain\n"
         "--cpu_watch_chilly_waters\n"
         "--cpu_watch_deep_blooper_sea\n"
+        "--cpu_watch_woody_woods\n"
         "--cpu_watch_generic\n"
         "--hiddenblockgen\n"
-        );
+    );
+}
+
+int main(int argc, char *argv[]) {
+    if (argc == 1) {
+        print_help();
         return 0;
     }
 
-    if (strncmp("--temp", argv[1], sizeof("--temp")) == 0) {
-        tempFunction(argv);
-        return 0;
-    }
-    // Loop through the command-line arguments
     for (int i = 1; i < argc; i++) {
-        // Check the argument and call the corresponding function
-        if (strcmp(argv[i], "--simduel") == 0) {
-            simduel(argc, argv);
-            return 0;
-        } else if (strcmp(argv[i], "--simduel2") == 0) {
-            simduel2(argc, argv);
-            return 0;
-        } else if (strcmp(argv[i], "--simduel3") == 0) {
-            simduel3(argc, argv);
-            return 0;
-        } else if (strcmp(argv[i], "--rngadv") == 0) {
-            rngadv(argc, argv);
-            return 0;
-        } else if (strcmp(argv[i], "--roll_chain") == 0) {
-            rollchain(argc, argv);
-            return 0;
-        } else if (strcmp(argv[i], "--cpu_watch_chilly_waters") == 0) {
-            cpu_item_space_watch_chilly_waters(argc, argv);
-            return 0;
-        } else if (strcmp(argv[i], "--cpu_watch_deep_blooper_sea") == 0) {
-            cpu_item_space_watch_deep_blooper_sea(argc, argv);
-            return 0;
-        } else if (strcmp(argv[i], "--cpu_watch_spiny_desert") == 0) {
-            cpu_item_space_watch_spiny_desert(argc, argv);
-            return 0;
-        } else if (strcmp(argv[i], "--cpu_watch_woody_woods") == 0) {
-            cpu_item_space_watch_woody_woods(argc, argv);
-            return 0;
-        } else if (strcmp(argv[i], "--cpu_watch_creepy_cavern") == 0) {
-            cpu_item_space_watch_creepy_cavern(argc, argv);
-            return 0;
-        } else if (strcmp(argv[i], "--cpu_watch_generic") == 0) {
-            cpu_item_space_watch_generic(argc, argv);
-            return 0;
-        } else if (strcmp(argv[i], "--hiddenblockgen") == 0) {
-            hiddenblockgen(argc, argv);
-            return 0;
-        } else {
+        int found = 0;
+        for (Command *cmd = commands; cmd->cmd != NULL; cmd++) {
+            if (strcmp(argv[i], cmd->cmd) == 0) {
+                cmd->func(argc, argv);
+                return 0;
+            }
+        }
+        if (!found) {
             printf("Unknown argument: %s\n", argv[i]);
+            print_help();
+            return 1; // Indicate an error
         }
     }
 
@@ -165,7 +163,7 @@ void rngadv(int argc, char* argv[]) {
 
     //printf("Seed1: %08lX, Seed2: %08lX\n", seed1, seed2);
     u32 callTotal = MeasureRngCalls(seed1, seed2);
-    printf("Calls: %08lu", callTotal);   
+    printf("Calls: %lu", callTotal);   
 }
 
 void rollchain(int argc, char* argv[]) {
@@ -190,7 +188,7 @@ void rollchain(int argc, char* argv[]) {
     u32 seedChainStart = 0;
     for (s32 i = 0; i < 20000; i++) {
         u32 prevSeed = cur_rng_seed;
-        u8 diceRollValue = rollDice();
+        u8 diceRollValue = RollDice();
         if (prevDiceRoll == diceRollValue && diceRollValue == wantedRoll) {
             if (chain == 0) {
                 seedChainStart = prevSeed;
@@ -241,55 +239,89 @@ void cpu_item_space_watch_generic(int argc, char* argv[]) {
     CPUGetWatchGeneric(rollValue, jumps);
 }
 
-void cpu_item_space_watch_chilly_waters(int argc, char* argv[]) {
-    s32 rollValue = 0;
-    s32 jumpsBeforeJunction = 0;
-    s32 jumpsAfterJunction = 0;
-    char bufferForItem[32];
-    s32 itemSlot1 = -1;
+// Constants
+#define MAX_JUMPS 10
+#define MAX_ROLL 10
+#define INVALID_VALUE -1
 
+void cpu_item_space_watch_chilly_waters(int argc, char* argv[]) {
+    s32 rollValue = INVALID_VALUE;
+    s32 jumpsBeforeJunction = INVALID_VALUE;
+    s32 jumpsAfterJunction = INVALID_VALUE;
+    char bufferForItem[32];
+    s32 itemSlot1 = INVALID_VALUE;
+    s32 starSpawnIndex = INVALID_VALUE;
+
+    if (argc < 3 || argc > 7) {
+        printf("Error: unexpected arg count\n");
+        return;
+    }
+
+    // Parse arguments based on their count
     switch (argc) {
+        case 7:
+            if (sscanf(argv[6], "%ld", &starSpawnIndex) != 1 || starSpawnIndex < 0 || starSpawnIndex >= 8) {
+                printf("Invalid value passed for starSpawnIndex\n");
+                return;
+            }
         case 6:
-            sscanf(argv[5], "%s", bufferForItem);
-            if (strncmp(bufferForItem, "--mushroom", sizeof("--mushroom")) == 0) {
+            sscanf(argv[5], "%31s", bufferForItem);
+            if (strcmp(bufferForItem, "--mushroom") == 0) {
                 itemSlot1 = MUSHROOM;
+            } else {
+                printf("Invalid item specified, setting to no item\n");
+                itemSlot1 = -1;
             }
         case 5:
-            sscanf(argv[4], "%ld", &jumpsAfterJunction);
-            if (jumpsAfterJunction > 10 || jumpsAfterJunction < 0) {
+            if (sscanf(argv[4], "%ld", &jumpsAfterJunction) != 1 || jumpsAfterJunction < 0 || jumpsAfterJunction > MAX_JUMPS) {
                 printf("Invalid value passed for jumpsAfterJunction\n");
                 return;
-            } 
+            }
         case 4:
-            sscanf(argv[3], "%ld", &jumpsBeforeJunction);
-            if (jumpsBeforeJunction > 10 || jumpsBeforeJunction < 0) {
+            if (sscanf(argv[3], "%ld", &jumpsBeforeJunction) != 1 || jumpsBeforeJunction < 0 || jumpsBeforeJunction > MAX_JUMPS) {
                 printf("Invalid value passed for jumpsBeforeJunction\n");
                 return;
-            } 
+            }
         case 3:
-            sscanf(argv[2], "%ld", &rollValue);
-            if (rollValue > 10 || rollValue < 0) {
+            if (sscanf(argv[2], "%ld", &rollValue) != 1 || rollValue < 0 || rollValue > MAX_ROLL) {
                 printf("Invalid value passed for rollValue\n");
                 return;
             }
+            break;
+        default:
+            printf("Error: unexpected arg count\n");
+            return;
     }
 
+    gGameStatus.boardIndex = CHILLY_WATERS;
+    SetStarSpawnDataChillyWaters(starSpawnIndex);
+    
+    // Display the parsed values
     printf("rollValue: %ld, jumpsBefore: %ld, jumpsAfter: %ld\n", rollValue, jumpsBeforeJunction, jumpsAfterJunction);
     CPUGetWatchChillyWaters(rollValue, jumpsBeforeJunction, jumpsAfterJunction, itemSlot1);
 }
 
 void cpu_item_space_watch_deep_blooper_sea(int argc, char* argv[]) {
-    s32 rollValue = 0;
-    s32 jumpsBeforeJunction = 0;
-    s32 jumpsAfterJunction = 0;
+    s32 rollValue = INVALID_VALUE;
+    s32 jumpsBeforeJunction = INVALID_VALUE;
+    s32 jumpsAfterJunction = INVALID_VALUE;
     char bufferForItem[32];
-    s32 itemSlot1 = -1;
+    s32 itemSlot1 = INVALID_VALUE;
+    s32 starSpawnIndex = INVALID_VALUE;
 
     switch (argc) {
+        case 7:
+            if (sscanf(argv[6], "%ld", &starSpawnIndex) != 1 || starSpawnIndex < 0 || starSpawnIndex >= 8) {
+                printf("Invalid value passed for starSpawnIndex\n");
+                return;
+            }
         case 6:
-            sscanf(argv[5], "%s", bufferForItem);
-            if (strncmp(bufferForItem, "--mushroom", sizeof("--mushroom")) == 0) {
+            sscanf(argv[5], "%31s", bufferForItem);
+            if (strcmp(bufferForItem, "--mushroom") == 0) {
                 itemSlot1 = MUSHROOM;
+            } else {
+                printf("Invalid item specified, setting to no item\n");
+                itemSlot1 = -1;
             }
         case 5:
             sscanf(argv[4], "%ld", &jumpsAfterJunction);
@@ -310,19 +342,28 @@ void cpu_item_space_watch_deep_blooper_sea(int argc, char* argv[]) {
                 return;
             }
     }
+
+    gGameStatus.boardIndex = DEEP_BLOOPER_SEA;
+    SetStarSpawnDataDeepBlooperSea(starSpawnIndex);
 
     printf("rollValue: %ld, jumpsBefore: %ld, jumpsAfter: %ld\n", rollValue, jumpsBeforeJunction, jumpsAfterJunction);
     CPUGetWatchDeepBlooperSea(rollValue, jumpsBeforeJunction, jumpsAfterJunction, itemSlot1);
 }
 
 void cpu_item_space_watch_spiny_desert(int argc, char* argv[]) {
-    s32 rollValue = 0;
-    s32 jumpsBeforeJunction = 0;
-    s32 jumpsAfterJunction = 0;
+    s32 rollValue = INVALID_VALUE;
+    s32 jumpsBeforeJunction = INVALID_VALUE;
+    s32 jumpsAfterJunction = INVALID_VALUE;
     char bufferForItem[32];
-    s32 itemSlot1 = -1;
+    s32 itemSlot1 = INVALID_VALUE;
+    s32 starSpawnIndex = INVALID_VALUE;
 
     switch (argc) {
+        case 7:
+            if (sscanf(argv[6], "%ld", &starSpawnIndex) != 1 || starSpawnIndex < 0 || starSpawnIndex >= 8) {
+                printf("Invalid value passed for starSpawnIndex\n");
+                return;
+            }
         case 6:
             sscanf(argv[5], "%s", bufferForItem);
             if (strncmp(bufferForItem, "--mushroom", sizeof("--mushroom")) == 0) {
@@ -341,7 +382,7 @@ void cpu_item_space_watch_spiny_desert(int argc, char* argv[]) {
             if (jumpsBeforeJunction > 10 || jumpsBeforeJunction < 0) {
                 printf("Invalid value passed for jumpsBeforeJunction\n");
                 return;
-            } 
+            }
         case 3:
             sscanf(argv[2], "%ld", &rollValue);
             if (rollValue > 10 || rollValue < 0) {
@@ -355,13 +396,19 @@ void cpu_item_space_watch_spiny_desert(int argc, char* argv[]) {
 }
 
 void cpu_item_space_watch_woody_woods(int argc, char* argv[]) {
-    s32 rollValue = 0;
-    s32 jumpsBeforeJunction = 0;
-    s32 jumpsAfterJunction = 0;
+    s32 rollValue = INVALID_VALUE;
+    s32 jumpsBeforeJunction = INVALID_VALUE;
+    s32 jumpsAfterJunction = INVALID_VALUE;
     char bufferForItem[32];
-    s32 itemSlot1 = -1;
+    s32 itemSlot1 = INVALID_VALUE;
+    s32 starSpawnIndex = INVALID_VALUE;
 
     switch (argc) {
+        case 7:
+            if (sscanf(argv[6], "%ld", &starSpawnIndex) != 1 || starSpawnIndex < 0 || starSpawnIndex >= 8) {
+                printf("Invalid value passed for starSpawnIndex\n");
+                return;
+            }
         case 6:
             sscanf(argv[5], "%s", bufferForItem);
             if (strncmp(bufferForItem, "--mushroom", sizeof("--mushroom")) == 0) {
@@ -386,19 +433,28 @@ void cpu_item_space_watch_woody_woods(int argc, char* argv[]) {
                 return;
             }
     }
+
+    gGameStatus.boardIndex = WOODY_WOODS;
+    SetStarSpawnDataWoodyWoods(starSpawnIndex);
 
     printf("rollValue: %ld, jumpsBefore: %ld, jumpsAfter: %ld\n", rollValue, jumpsBeforeJunction, jumpsAfterJunction);
     CPUGetWatchWoodyWoods(rollValue, jumpsBeforeJunction, jumpsAfterJunction, itemSlot1);
 }
 
 void cpu_item_space_watch_creepy_cavern(int argc, char* argv[]) {
-    s32 rollValue = 0;
-    s32 jumpsBeforeJunction = 0;
-    s32 jumpsAfterJunction = 0;
+    s32 rollValue = INVALID_VALUE;
+    s32 jumpsBeforeJunction = INVALID_VALUE;
+    s32 jumpsAfterJunction = INVALID_VALUE;
     char bufferForItem[32];
-    s32 itemSlot1 = -1;
+    s32 itemSlot1 = INVALID_VALUE;
+    s32 starSpawnIndex = INVALID_VALUE;
 
     switch (argc) {
+        case 7:
+            if (sscanf(argv[6], "%ld", &starSpawnIndex) != 1 || starSpawnIndex < 0 || starSpawnIndex >= 8) {
+                printf("Invalid value passed for starSpawnIndex\n");
+                return;
+            }
         case 6:
             sscanf(argv[5], "%s", bufferForItem);
             if (strncmp(bufferForItem, "--mushroom", sizeof("--mushroom")) == 0) {
@@ -423,6 +479,9 @@ void cpu_item_space_watch_creepy_cavern(int argc, char* argv[]) {
                 return;
             }
     }
+
+    gGameStatus.boardIndex = CREEPY_CAVERN;
+    SetStarSpawnDataCreepyCavern(starSpawnIndex);
 
     printf("rollValue: %ld, jumpsBefore: %ld, jumpsAfter: %ld\n", rollValue, jumpsBeforeJunction, jumpsAfterJunction);
     CPUGetWatchCreepyCavern(rollValue, jumpsBeforeJunction, jumpsAfterJunction, itemSlot1);
