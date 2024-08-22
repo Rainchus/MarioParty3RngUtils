@@ -17,7 +17,8 @@
 #define BOTTOM_OPTION 2
 
 u32 cur_rng_seed = 0x0000D9ED; //initial starting seed D_80097650
-s32 bankMessageSpeeds[] = {648, 728, 868};
+//t
+s32 framesForInitialTextBoxes[] = {648, 728, 868};
 
 //advancements that happen during cpu selection on each message speed
 s32 CpuSelectionArray0[] = {116, 196, 336};
@@ -91,13 +92,6 @@ void PlayerFaceForward(void) {
     }    
 }
 
-void InitialLoadInCalls(void) {
-    //sim time to load into game
-    for (int j = 0; j < 58; j++) {
-        ADV_SEED(cur_rng_seed);
-    }
-}
-
 u32 MeasureRngCalls(u32 seedStart, u32 seedEnd) {
     u32 calls = 0;
     cur_rng_seed = seedStart;
@@ -117,6 +111,8 @@ s32 GetSpaceIndexFromChainAndSpace(s32 curChainIndex, s32 curSpaceIndex) {
     return curSpaceChain[curSpaceIndex];
 }
 
+//C047D986
+
 //handles all rng related things starting at decision of item space event
 s32 HandleLogicFromItemSpace(s32 messageSpeed) {
     //printf("Seed before event: %08lX\n", cur_rng_seed);
@@ -126,13 +122,11 @@ s32 HandleLogicFromItemSpace(s32 messageSpeed) {
     }
 
     //advance rng up to text box based on text speed
-    
-    for (int i = 0; i < bankMessageSpeeds[messageSpeed]; i++) {
+    for (int i = 0; i < framesForInitialTextBoxes[messageSpeed]; i++) {
         ADV_SEED(cur_rng_seed);
     }
 
     //get random question (advances rng twice)
-    //printf("Seed before question asked: %08lX\n", cur_rng_seed);
     func_800EEF80_102BA0(5.0f);
 
     //advance rng through text box popping up
@@ -141,11 +135,7 @@ s32 HandleLogicFromItemSpace(s32 messageSpeed) {
     }
 
     //cpu choosen an option to the question
-    //printf("Seed before chosen index: %08lX\n", cur_rng_seed);
     s32 cpuChosenIndex = func_800EEF80_102BA0(3);
-    if (cpuChosenIndex == GREEDY_OPTION) {
-        return 0;
-    }
 
     s32 textBoxFrames;
     if (cpuChosenIndex == MIDDLE_OPTION) {
@@ -153,7 +143,7 @@ s32 HandleLogicFromItemSpace(s32 messageSpeed) {
     } else if (cpuChosenIndex == BOTTOM_OPTION) {
         textBoxFrames = CpuSelectionArray1[messageSpeed];
     } else {
-        //??? code shouldn't get here
+        //GREEDY_OPTION
         return 0;
     }
 
@@ -163,8 +153,6 @@ s32 HandleLogicFromItemSpace(s32 messageSpeed) {
     }
 
     //what happens based on what cpu answers
-    // seed4 = cur_rng_seed;
-    //printf("Seed before question outcome: %08lX\n", cur_rng_seed);
     s32 questionOutcome = func_800EEF80_102BA0(10.0f);
 
     if (cpuChosenIndex == MIDDLE_OPTION) {
@@ -184,7 +172,6 @@ s32 HandleLogicFromItemSpace(s32 messageSpeed) {
         ADV_SEED(cur_rng_seed);
     }
 
-    //printf("Seed before rand item chosen: %08lX\n", cur_rng_seed);
     s32 itemChosen = func_800EEF80_102BA0(4);
     if (itemChosen == RARE_ITEM_WATCH) {
         return 1;

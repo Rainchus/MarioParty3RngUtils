@@ -192,6 +192,19 @@ SpaceChain ChillyWatersChains[] = {
     {ARRAY_COUNT(ChillyWatersSpaces_10), ChillyWatersSpaces_10},
 };
 
+u32 GetChainAndSpaceFromAbsSpace(s32 space) {
+    for (u16 i = 0; i < ARRAY_COUNT(ChillyWatersChains); i++) {
+        SpaceChain* curChain = &ChillyWatersChains[i];
+        for (u16 j = 0; j < curChain->amountOfSpaces; j++) {
+            if (space == curChain->spaceChainArray[j]) {
+                //return space;
+                return (i << 16) | j;
+            }
+        }
+    }
+    return -1;
+}
+
 typedef struct SpaceChainData {
     s16 chainIndex;
     s16 spaceChainIndex;
