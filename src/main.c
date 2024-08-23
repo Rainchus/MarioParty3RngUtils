@@ -45,6 +45,7 @@ char* speedsText[] = {
 s32 HandleSpaceType(u8 spaceType, s32 messageSpeed) {
     //TODO: fill in logic for rng advancements
     switch (spaceType) {
+    case SPACE_UNK_8: //for woody woods junctions??
     case SPACE_INVISIBLE:
     case SPACE_SHOP:
     case SPACE_STAR:
@@ -64,7 +65,7 @@ s32 CPUWalkSpaces(s32 diceRoll, s32 walkSpeed, s32 messageSpeed) {
     s32 funcEventResult;
     s16* spacesWalked = absSpacesWalked;
 
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 12; i++) {
         absSpacesWalked[i] = 0;
     }
 
@@ -113,8 +114,6 @@ s32 CPUWalkSpaces(s32 diceRoll, s32 walkSpeed, s32 messageSpeed) {
         SpaceData* space = &spacesForBoards[gGameStatus.boardIndex][spaceID];
         *spacesWalked++ = spaceID;
 
-        
-
         s32 shouldDecrementRoll = HandleSpaceType(space->space_type, messageSpeed);
         if (shouldDecrementRoll == TRUE) {
             diceRoll--;
@@ -138,6 +137,7 @@ void DoPlayerTurn(s32 wantedRoll, s32 iteration, s32 absSpaceStart, s32 absSpace
     u32 startingSeed = cur_rng_seed;
     u32 prevSeed;
     u16 spaceCount = boardSpaceCounts[boardIndex];
+    u32 seedBeforeDiceRoll;
 
     blockData.coinBlockSpaceIndex = -1;
     blockData.itemBlockSpaceIndex = -1;
@@ -158,6 +158,7 @@ void DoPlayerTurn(s32 wantedRoll, s32 iteration, s32 absSpaceStart, s32 absSpace
     }
 
     //get rolled number
+    seedBeforeDiceRoll = cur_rng_seed;
     diceRoll = RollDice();
 
     //if dice roll isn't correct number, exit
@@ -183,6 +184,7 @@ void DoPlayerTurn(s32 wantedRoll, s32 iteration, s32 absSpaceStart, s32 absSpace
             } else if (cpuTurnResult == 1) {
                 //is wanted result, print info
                 printf("Calls: "ANSI_YELLOW"%ld"ANSI_WHITE", Seed: %08X, Roll: "ANSI_MAGENTA"%d"ANSI_WHITE" \t| Walk: "ANSI_RED"%s"ANSI_WHITE" \t| Message: "ANSI_RED"%s"ANSI_WHITE"\n", iteration, startingSeed, diceRoll, speedsText[i], speedsText[j]);
+                //printf("Seed Before Dice Roll: %08X\n", seedBeforeDiceRoll);
             }
             cur_rng_seed = prevSeed;
         }

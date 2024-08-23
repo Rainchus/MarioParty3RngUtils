@@ -22,9 +22,19 @@ s16 DeepBlooperSeaStarSpaces[] = {
     0x001E, 0x0028, 0x0015, 0x0007, 0x0041, 0x005C, 0x004C, 0x0056
 };
 
+s16 SpinyDesertStarSpaces[] = {
+    0x0004, 0x005A, 0x0014, 0x001E, 0x0028, 0x004F, 0x0002, 0x003E
+};
+
+s16 WoodyWoodsStarSpaces[] = {
+    0x004B, 0x0046, 0x0016, 0x0025, 0x0035, 0x0030, 0x0009, 0x0003
+};
+
 s16* StarSpaceArray[] = {
     ChillyWatersStarSpaces,
     DeepBlooperSeaStarSpaces,
+    SpinyDesertStarSpaces,
+    WoodyWoodsStarSpaces
 };
 
 //i think this is only 8 in size, made it 16 for safety

@@ -15,10 +15,16 @@ typedef struct BoardChainsData {
 
 extern SpaceData chilly_waters_spaces[148];
 extern SpaceData deep_blooper_sea_spaces[138];
+extern SpaceData spiny_desert_spaces[143];
+extern SpaceData woody_woods_spaces[144];
 extern SpaceChain ChillyWatersChains[17];
 extern SpaceChain DeepBlooperSeaChains[14];
+extern SpaceChain SpinyDesertChains[14];
+extern SpaceChain WoodyWoodsChains[15];
+extern DecisionTreeNonLeafNode WoodyWoodsJunction0Nodes[4];
 extern s16 CW_Space_34[];
 extern s16 DBS_Space_25[];
+extern DoubleJunction WW_Space_67;
 extern DoubleJunction CW_Space_6C;
 extern DoubleJunction DBS_Space_68;
 extern BoardChainsData BoardChains[];

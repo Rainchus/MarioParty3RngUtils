@@ -217,7 +217,7 @@ s32 HandleLogicFromItemSpace(s32 messageSpeed, s16* data) {
 
     s32 itemChosen = func_800EEF80_102BA0(4);
     if (itemChosen == RARE_ITEM_WATCH) {
-        // for (int j = 0; j < 7; j++) {
+        // for (int j = 0; j < 12; j++) {
         //     printf("Space: %04X\n", data[j]);
         // }
         //printf("Seed Before item space is %08X\n", rngBeforeItemSpaceResult);

@@ -16,7 +16,9 @@ void advanceRNGBackwards(void);
 
 BoardChainsData BoardChains[] = {
     {ChillyWatersChains, ARRAY_COUNT(ChillyWatersChains)},
-    {DeepBlooperSeaChains, ARRAY_COUNT(DeepBlooperSeaChains)}
+    {DeepBlooperSeaChains, ARRAY_COUNT(DeepBlooperSeaChains)},
+    {SpinyDesertChains, ARRAY_COUNT(SpinyDesertChains)},
+    {WoodyWoodsChains, ARRAY_COUNT(WoodyWoodsChains)}
 };
 
 u32 GetChainAndSpaceFromAbsSpace(s32 space) {
@@ -88,6 +90,20 @@ s32 JunctionDecision(void* junctionData) {
     case SPINY_DESERT:
         break;
     case WOODY_WOODS:
+        DoubleJunction* ww_node = junctionData;
+        s16* ww_spaces = ww_node->spaceABS;
+
+        aiDecision = aiMain(ww_node->junctionNodeData, 2);
+        if (aiDecision == NO_DIRECTION_SWAP) {
+            return BAD_JUNCTION_RESULT;
+        }
+
+        //swap junction arrow decision, 51 frames
+        for (int i = 0; i < FRAME_COUNT_SWAP_DIRECTION; i++) {
+            ADV_SEED(cur_rng_seed);
+        }
+
+        SetPlayerNextChainAndSpaceFromAbsSpace(ww_spaces[1], SET_NEXT);
         break;
     case CREEPY_CAVERN:
         break;
@@ -101,8 +117,8 @@ s32 JunctionDecision(void* junctionData) {
 SpaceData* spacesForBoards[] = {
     chilly_waters_spaces,
     deep_blooper_sea_spaces,
-    // spiny_desert_spaces,
-    // woody_woods_spaces,
+    spiny_desert_spaces,
+    woody_woods_spaces,
     // creepy_cavern_spaces,
     // waluigis_island_spaces
 };
