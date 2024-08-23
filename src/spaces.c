@@ -1,6 +1,15 @@
 #include "mp3.h"
 #include <stdio.h>
 
+//frame counts for cpu swapping directions at a junction
+#define FRAME_COUNT_NO_DIRECTION_SWAP 42
+#define FRAME_COUNT_SWAP_DIRECTION 51
+
+#define NO_DIRECTION_SWAP 0
+#define DIRECTION_SWAP 1
+
+int aiMain(DecisionTreeNonLeafNode* node, s32 nodeCount);
+
 //starting space
 s16 ChillyWatersSpaces_00[] = {
  0x006B,
@@ -192,9 +201,21 @@ SpaceChain ChillyWatersChains[] = {
     {ARRAY_COUNT(ChillyWatersSpaces_10), ChillyWatersSpaces_10},
 };
 
+typedef struct BoardChainsData {
+    SpaceChain* boardChainData;
+    int amountOfChains;
+} BoardChainsData;
+
+BoardChainsData BoardChains[] = {
+    {ChillyWatersChains, ARRAY_COUNT(ChillyWatersChains)}
+};
+
 u32 GetChainAndSpaceFromAbsSpace(s32 space) {
-    for (u16 i = 0; i < ARRAY_COUNT(ChillyWatersChains); i++) {
-        SpaceChain* curChain = &ChillyWatersChains[i];
+    SpaceChain* curBoardChains = BoardChains[gGameStatus.boardIndex].boardChainData;
+    u16 chainCount = BoardChains[gGameStatus.boardIndex].amountOfChains;
+
+    for (u16 i = 0; i < chainCount; i++) {
+        SpaceChain* curChain = &curBoardChains[i];
         for (u16 j = 0; j < curChain->amountOfSpaces; j++) {
             if (space == curChain->spaceChainArray[j]) {
                 //return space;
@@ -210,34 +231,89 @@ typedef struct SpaceChainData {
     s16 spaceChainIndex;
 } SpaceChainData;
 
+typedef struct CW_Node {
+    SpaceChainData decisionChainAndSpace[2];
+    DecisionTreeNonLeafNode* junctionNodeData;
+} CW_Node;
+
 SpaceChainData CW_Space_34[] = {
     {0x000F, 0x0002}, //space id 0x0001
 };
 
-SpaceChainData CW_Space_6C[] = {
-    {0x000F, 0x0000}, //space id 0x004D (left at junction)
-    {0x0002, 0x0000}, //space id 0x0035 (right at junction)
+extern DecisionTreeNonLeafNode ChillyWatersJunction0Nodes[3];
+
+CW_Node CW_Space_6C = {
+    {{0x000F, 0x0000}, //space id 0x004D (left at junction)
+    {0x0002, 0x0000}}, //space id 0x0035 (right at junction)
+    ChillyWatersJunction0Nodes
 };
 
 //we only ever care about the first player, so hardcode to player index 0
-void SetNextSpace(void* funcData) {
+s32 SetNextSpace(void* funcData) {
     Player* player = GetPlayerStruct(0);
     SpaceChainData* spaces = (SpaceChainData*)funcData;
 
     player[0].next_chain_index = spaces[0].chainIndex;
     player[0].next_space_index = spaces[0].spaceChainIndex;
+    return NORMAL_RETURN;
 }
 
-void JunctionDecision(void* junctionData) {
+s32 JunctionDecision(void* junctionData) {
     Player* player = GetPlayerStruct(0);
-    SpaceChainData* spaces = (SpaceChainData*)junctionData;
+    s32 aiDecision = 1;
 
-    //TODO: implement AI decision here
-    //Temporary hardcoding of choosing left
-    printf(ANSI_CYAN "Info: JunctionDecision ran\n" ANSI_RESET);
-    player[0].next_chain_index = spaces[0].chainIndex;
-    player[0].next_space_index = spaces[0].spaceChainIndex;
-    printf(ANSI_CYAN "Info: JunctionDecision of 0\n"ANSI_RESET);
+    //wait 5 frames after making it to junction before cpu decides where to go
+    for (int i = 0; i < 5; i++) {
+        ADV_SEED(cur_rng_seed);
+    }
+
+    switch (gGameStatus.boardIndex) {
+    case CHILLY_WATERS:
+    
+        CW_Node* node = junctionData;
+        SpaceChainData* spaces = (SpaceChainData*)node->decisionChainAndSpace;
+
+        //printf("Seed Before junction: %08X\n", cur_rng_seed);
+
+        aiDecision = aiMain(CW_Space_6C.junctionNodeData, ARRAY_COUNT(ChillyWatersJunction0Nodes));
+        if (aiDecision == DIRECTION_SWAP) {
+            return BAD_JUNCTION_RESULT;
+        }
+        //doesn't swap junction arrow decision, 42 frames
+        for (int i = 0; i < FRAME_COUNT_NO_DIRECTION_SWAP; i++) {
+            ADV_SEED(cur_rng_seed);
+        }
+        player[0].next_chain_index = spaces[0].chainIndex;
+        player[0].next_space_index = spaces[0].spaceChainIndex;
+        //printf("NextChain: %02X, NextSpace: %02X\n", player[0].next_chain_index, player[0].next_space_index);
+        break;
+    case DEEP_BLOOPER_SEA:
+        break;
+    case SPINY_DESERT:
+        break;
+    case WOODY_WOODS:
+        break;
+    case CREEPY_CAVERN:
+        break;
+    case WALUIGIS_ISLAND:
+        break;
+    }
+    
+    return NORMAL_RETURN;
+
+
+
+
+
+    // Player* player = GetPlayerStruct(0);
+    // SpaceChainData* spaces = (SpaceChainData*)junctionData;
+
+    // //TODO: implement AI decision here
+    // //Temporary hardcoding of choosing left
+    // printf(ANSI_CYAN "Info: JunctionDecision ran\n" ANSI_RESET);
+    // player[0].next_chain_index = spaces[0].chainIndex;
+    // player[0].next_space_index = spaces[0].spaceChainIndex;
+    // printf(ANSI_CYAN "Info: JunctionDecision of 0\n"ANSI_RESET);
 }
 
 SpaceData chilly_waters_spaces[] = {
@@ -349,7 +425,7 @@ SpaceData chilly_waters_spaces[] = {
 /* 0x069 */ {0x01, 0x03, 0x0000, 0x00000000,  { 185.0000f, 0.0000f, 123.1100f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000, 0x0000 },
 /* 0x06A */ {0x01, 0x03, 0x0000, 0x0000F000,  { 245.0000f, 0.0000f, 21.2199f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000, 0x0000 },
 /* 0x06B */ {0x01, 0x00, 0x0000, 0x00000000,  { 240.0000f, 0.0000f, 230.0000f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000, 0x0000 },
-/* 0x06C */ {0x01, 0x03, 0x0000, 0xF0F80000,  { 30.0000f, 0.0000f, 210.0000f}, { 0.1000f, 0.1000f, 0.1000f }, JunctionDecision, CW_Space_6C },
+/* 0x06C */ {0x01, 0x03, 0x0000, 0xF0F80000,  { 30.0000f, 0.0000f, 210.0000f}, { 0.1000f, 0.1000f, 0.1000f }, JunctionDecision, &CW_Space_6C },
 /* 0x06D */ {0x01, 0x03, 0x0000, 0xFF800000,  { -150.0000f, 0.0000f, -140.0000f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000, 0x0000 },
 /* 0x06E */ {0x01, 0x03, 0x0000, 0x80000000,  { -10.0000f, 0.0000f, -175.0000f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000, 0x0000 },
 /* 0x06F */ {0x01, 0x03, 0x0000, 0x000000F0,  { -45.0000f, 0.0000f, -260.0000f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000, 0x0000 },

@@ -26,6 +26,9 @@ typedef s32 func_ptr(void);
 #define CREEPY_CAVERN 4
 #define WALUIGIS_ISLAND 5
 
+#define NORMAL_RETURN -1
+#define BAD_JUNCTION_RESULT -2
+
 enum Items {
     MUSHROOM = 0,
     SKELETON_KEY = 1,
@@ -82,7 +85,7 @@ typedef struct SpaceData {
 /* 0x08 */ Vec3f coords;
 /* 0x14 */ Vec3f rot;
 // /* 0x20 */ void* event_list;
-/* 0x20 */ void (*eventFunction)(void*);
+/* 0x20 */ s32 (*eventFunction)(void*);
 //Custom struct members
 /* 0x24 */ void* functionData; //usually next space to go to
 } SpaceData; //sizeof 0x28 for custom struct (normal struct size is 0x24)
@@ -211,7 +214,7 @@ u8 RollDice(void);
 u8 rollDice2(void);
 s32 func_800EEF80_102BA0(f32 arg0);
 u32 MeasureRngCalls(u32 seedStart, u32 seedEnd);
-SpaceData* func_800EB160_FED80(s16 arg0, s32 boardIndex);
+SpaceData* GetSpaceData(s16 arg0, s32 boardIndex);
 void PlaceHiddenBlocksMain(Blocks* blocks, s32 numOfSpaces, s32 boardIndex);
 s16 func_800EBCD4_FF8F4(u8 arg0, s32 numOfBoardSpaces, s32 boardIndex);
 s32 IsFlagSet(s32 input);

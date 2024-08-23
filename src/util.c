@@ -17,7 +17,7 @@
 #define BOTTOM_OPTION 2
 
 u32 cur_rng_seed = 0x0000D9ED; //initial starting seed D_80097650
-//t
+//
 s32 framesForInitialTextBoxes[] = {648, 728, 868};
 
 //advancements that happen during cpu selection on each message speed
@@ -27,8 +27,12 @@ s32 CpuSelectionArray1[] = {184, 264, 404};
 //advancements that happen before rare item is decided
 s32 CpuSelectionArray2[] = {108, 188, 328};
 
+//advancements that happen while a cpu is at a bank at all 3 message speeds
+s32 CpuBankRngAdvancements[] = {159, 199, 269};
+
 extern SpaceChain ChillyWatersChains[];
 extern u8* ChillyWatersStarSpawnFlags[];
+extern u8** StarSpawnFlags[];
 
 GameStatus gGameStatus = {
     .unk0 = 1,
@@ -46,10 +50,36 @@ GameStatus gGameStatus = {
     .D_800CD0B6 = {0x00, 0x00, 0x00, 0x00}, //is this longer?
 };
 
-void SetStarSpawnDataChillyWaters(s32 index) {
-    for (s32 i = 0; i < 4; i++) {
-        gGameStatus.D_800CD0B6[i] = ChillyWatersStarSpawnFlags[index][i];
-    }
+/*
+0x89BF - 0
+0x49BF - 1
+0xC9BE - 2
+0xC9BD - 3
+0xC9BB - 4
+0xC9B7 - 5
+0xC9AF - 6
+0xC99F - 7
+*/
+
+u8 arrayThing[][2] = {
+    {0x89, 0xBF}, //0
+    {0x49, 0xBF}, //1
+    {0xC9, 0xBE}, //2
+    {0xC9, 0xBD}, //3
+    {0xC9, 0xBB}, //4
+    {0xC9, 0xB7}, //5
+    {0xC9, 0xAF}, //6
+    {0xC9, 0x9F}, //7
+};
+
+
+
+void SetStarSpawnData(s32 starSpawnIndex, s32 boardIndex) {
+    //only first 2 bytes matter
+    gGameStatus.D_800CD0B6[0] = arrayThing[starSpawnIndex][0];
+    gGameStatus.D_800CD0B6[1] = arrayThing[starSpawnIndex][1];
+
+    printf("[0]: %02X, [1]: %02X, [2]: %02X, [3]: %02X\n", gGameStatus.D_800CD0B6[0], gGameStatus.D_800CD0B6[1], gGameStatus.D_800CD0B6[2], gGameStatus.D_800CD0B6[3]);
 }
 
 s16 GetCurrentPlayerIndex(void) {
@@ -66,6 +96,19 @@ Player* GetPlayerStruct(s32 index) {
 u8 rand8(void) {
     cur_rng_seed = cur_rng_seed * 0x41C64E6D + 0x3039;
     return (cur_rng_seed + 1) >> 16;
+}
+
+s16 RNGPercentChance(s8 percentChance) {
+    u32 result;
+    u32 randVal;
+
+    //printf(ANSI_CYAN "Probability: %d\n" ANSI_RESET, percentChance);
+    randVal = rand8();
+    result = (percentChance > ((randVal * 99) >> 8));
+    //printf(ANSI_CYAN "Rand: %ld\n" ANSI_RESET, randVal);
+    //printf(ANSI_CYAN "Outcome: %ld\n" ANSI_RESET, result);
+
+    return result;
 }
 
 s32 func_800EEF80_102BA0(f32 arg0) { //800EFE20 in duel mode
@@ -110,8 +153,6 @@ s32 GetSpaceIndexFromChainAndSpace(s32 curChainIndex, s32 curSpaceIndex) {
     s16* curSpaceChain = ChillyWatersChains[curChainIndex].spaceChainArray;
     return curSpaceChain[curSpaceIndex];
 }
-
-//C047D986
 
 //handles all rng related things starting at decision of item space event
 s32 HandleLogicFromItemSpace(s32 messageSpeed) {
@@ -178,4 +219,62 @@ s32 HandleLogicFromItemSpace(s32 messageSpeed) {
     }
     return 0;
     
+}
+
+void DoBankAdvancements(s32 messageSpeed) {
+    //player face bank when passing it
+    for (int i = 0; i < 8; i++) {
+        ADV_SEED(cur_rng_seed);
+    }
+
+    //time at bank
+    for (int i = 0; i < CpuBankRngAdvancements[messageSpeed]; i++) {
+        ADV_SEED(cur_rng_seed);
+    }
+}
+
+int SetStarBitIndex(u32 index) {
+    switch (index) {
+    case 0x89BF:
+        return 0;
+    case 0x49BF:
+        return 1;
+    case 0xC9BE:
+        return 2;
+    case 0xC9BD:
+        return 3;
+    case 0xC9BB:
+        return 4;
+    case 0xC9B7:
+        return 5;
+    case 0xC9AF:
+        return 6;
+    case 0xC99F:
+        return 7;
+    default:
+        return -1;
+    }
+}
+
+int GetStarBitIndex(u32 value) {
+    switch (value) {
+    case 0x89BF:
+        return 0;
+    case 0x49BF:
+        return 1;
+    case 0xC9BE:
+        return 2;
+    case 0xC9BD:
+        return 3;
+    case 0xC9BB:
+        return 4;
+    case 0xC9B7:
+        return 5;
+    case 0xC9AF:
+        return 6;
+    case 0xC99F:
+        return 7;
+    default:
+        return -1;
+    }
 }

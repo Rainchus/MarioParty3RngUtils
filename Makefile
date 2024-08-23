@@ -2,6 +2,7 @@
 
 CC = clang
 CFLAGS = -Wall -O3
+CFLAGS += -D_CRT_SECURE_NO_WARNINGS
 DEBUG_FLAGS = -g -O0  # Debug flags: -g for debug info, -O0 to disable optimization
 INCLUDES = -Iinclude
 SRCDIR = src

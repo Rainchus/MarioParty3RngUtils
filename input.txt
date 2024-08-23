@@ -1,0 +1,14 @@
+StartSpace: 0x21
+NextSpace: 0x2C
+EndSpace: 0x01
+Board: 0
+Roll: 6
+Star: 3
+
+//board indexes:
+chilly waters = 0
+deep blooper sea = 1
+spiny desert = 2
+woody woods = 3
+creepy cavern = 4
+waluigi's island = 5

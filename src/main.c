@@ -6,12 +6,15 @@
 #define ERROR -1
 #define ROLL_DICE_BLOCK_TIME 23
 
+void DoBankAdvancements(s32 messageSpeed);
 void PlayerFaceForward(void);
 u32 MeasureRngCalls(u32 seedStart, u32 seedEnd);
 u8 rand8(void);
 s32 GetSpaceIndexFromChainAndSpace(s32 curChainIndex, s32 curSpaceIndex);
 s32 HandleLogicFromItemSpace(s32);
 u32 GetChainAndSpaceFromAbsSpace(s32 space);
+void ResetStarSpaces(s32 boardIndex);
+void SetStarSpace(s32 starSpaceIndex, s32 boardIndex);
 
 s32 rng_advancements_between_spaces[] = {6, 11, 16};
 
@@ -38,7 +41,7 @@ char* speedsText[] = {
     "SLOW",
 };
 
-s32 HandleSpaceType(u8 spaceType) {
+s32 HandleSpaceType(u8 spaceType, s32 messageSpeed) {
     //TODO: fill in logic for rng advancements
     switch (spaceType) {
     case SPACE_INVISIBLE:
@@ -47,23 +50,29 @@ s32 HandleSpaceType(u8 spaceType) {
         return FALSE;
     case SPACE_BANK:
         //TODO: add advancements here
+        DoBankAdvancements(messageSpeed);
         return TRUE;
     default:
         return TRUE;
     }
-
 }
 
 s32 CPUWalkSpaces(s32 diceRoll, s32 walkSpeed, s32 messageSpeed) {
     Player* player = GetPlayerStruct(-1); //get current player struct
     s32 spaceID;
     s32 spaceCur, spaceNext;
+    s32 funcEventResult;
+
+    s32 temp0, temp1;
 
     //time to roll dice and start moving
     for (int i = 0; i < ROLL_DICE_BLOCK_TIME; i++) {
         ADV_SEED(cur_rng_seed);
     }
 
+    temp0 = GetSpaceIndexFromChainAndSpace(player->cur_chain_index, player->cur_space_index);
+    temp1 = GetSpaceIndexFromChainAndSpace(player->next_chain_index, player->next_space_index);
+    //printf(ANSI_CYAN "Info: From chain %02X space %02X (0x%02lX) -> chain %02X space %02X (0x%02lX)\n" ANSI_RESET, player->cur_chain_index, player->cur_space_index, temp0, player->next_chain_index, player->next_space_index, temp1);
     while (diceRoll > 0) {
         //move player to next space
         spaceCur = GetSpaceIndexFromChainAndSpace(player->cur_chain_index, player->cur_space_index);
@@ -78,30 +87,37 @@ s32 CPUWalkSpaces(s32 diceRoll, s32 walkSpeed, s32 messageSpeed) {
         //check if next space would be out of array bounds
         //printf("Next space index would be %02X\n", player->cur_space_index + 1);
 
-        //+2 because we need +1 for next space then another +1 to convert index -> non index
-        if (player->cur_space_index + 2 >= ChillyWatersChains[player->cur_chain_index].amountOfSpaces) {
-            //if it is, get function pointer for next space to appropriately set the next space correctly
-            spaceID = GetSpaceIndexFromChainAndSpace(player->cur_chain_index, player->cur_space_index + 1);
-            SpaceData* space = &chilly_waters_spaces[spaceID];
+        //+1 to convert index -> non index
+        if (player->cur_space_index + 1 >= ChillyWatersChains[player->cur_chain_index].amountOfSpaces) {
+            //if it is, get function pointer for space to appropriately set the next space correctly
+            spaceID = GetSpaceIndexFromChainAndSpace(player->cur_chain_index, player->cur_space_index);
+            SpaceData* space = &spacesForBoards[gGameStatus.boardIndex][spaceID];
+
             if (space->eventFunction == 0) {
-                printf(ANSI_RED "Error: End of chain reached at next space %02lX with no known link to next chain\n" ANSI_RESET, spaceID);
+                printf(ANSI_RED "Error: End of chain reached at space %02lX with no known link to next chain\n" ANSI_RESET, spaceID);
                 return ERROR;
             }
             //function pointer does exist, run function
-            //TODO: this needs to include rng advancements at some point
-            space->eventFunction(space->functionData);
+            //TODO: be sure to fill in *all* rng advacements here
+            funcEventResult = space->eventFunction(space->functionData);
+            switch (funcEventResult) {
+            case NORMAL_RETURN:
+                break;
+            case BAD_JUNCTION_RESULT:
+                return 0; //cpu went wrong way, exit
+            }
         } else {
             //otherwise, just increment next space id
             player->next_space_index++;
         }
 
-        spaceNext = GetSpaceIndexFromChainAndSpace(player->cur_chain_index, player->cur_space_index);
+        spaceNext = GetSpaceIndexFromChainAndSpace(player->next_chain_index, player->next_space_index);
         //printf(ANSI_CYAN "Info: From chain %02X space %02X (0x%02lX) -> chain %02X space %02X (0x%02lX)\n" ANSI_RESET, player->cur_chain_index, player->cur_space_index, spaceCur, player->next_chain_index, player->next_space_index, spaceNext);
 
         spaceID = GetSpaceIndexFromChainAndSpace(player->cur_chain_index, player->cur_space_index);
-        SpaceData* space = &chilly_waters_spaces[spaceID];
+        SpaceData* space = &spacesForBoards[gGameStatus.boardIndex][spaceID];
 
-        s32 shouldDecrementRoll = HandleSpaceType(space->space_type);
+        s32 shouldDecrementRoll = HandleSpaceType(space->space_type, messageSpeed);
         if (shouldDecrementRoll == TRUE) {
             diceRoll--;
         }
@@ -122,7 +138,7 @@ s32 CPUWalkSpaces(s32 diceRoll, s32 walkSpeed, s32 messageSpeed) {
 }
 
 //starts from placement of hidden blocks
-void DoPlayerTurn(s32 boardIndex, s32 wantedRoll, s32 iteration) {
+void DoPlayerTurn(s32 wantedRoll, s32 iteration, s32 absSpaceStart, s32 absSpaceNext, s32 absSpaceEnd, s32 boardIndex) {
     Blocks blockData;
     u8 diceRoll;
     u32 startingSeed = cur_rng_seed;
@@ -166,80 +182,120 @@ void DoPlayerTurn(s32 boardIndex, s32 wantedRoll, s32 iteration) {
 
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
-            u32 AbsSpace = GetChainAndSpaceFromAbsSpace(0x4D);
+            u32 AbsSpace = GetChainAndSpaceFromAbsSpace(absSpaceStart);
             gPlayers[0].cur_chain_index = AbsSpace >> 16;
             gPlayers[0].cur_space_index = AbsSpace & 0xFFFF;
 
-            u32 AbsSpaceNext = GetChainAndSpaceFromAbsSpace(0x58);
+            u32 AbsSpaceNext = GetChainAndSpaceFromAbsSpace(absSpaceNext);
             gPlayers[0].next_chain_index = AbsSpaceNext >> 16;
             gPlayers[0].next_space_index = AbsSpaceNext & 0xFFFF;
-            // gPlayers[0].cur_chain_index = 0;
-            // gPlayers[0].cur_space_index = 0;
 
-            // gPlayers[0].next_chain_index = 1;
-            // gPlayers[0].next_space_index = 6;
             s32 cpuTurnResult = CPUWalkSpaces(diceRoll, i, j); //try all walk and message speed combinations
             if (cpuTurnResult == ERROR) {
                 return;
             } else if (cpuTurnResult == 1) {
                 // printf("Calls: %d, startingSeed: %08X\n", iteration, startingSeed);
                 //printf("Seed before roll: %08lX\n", seedTemp);
-                //printf("Seed before blocks: %08lX\n", BeforeHiddenBlocksSeed);
-                //printf("Seed after blocks: %08lX\n", AfterHiddenBlocksSeed);
-                printf("Calls: "ANSI_YELLOW"%ld"ANSI_WHITE", Seed: %08lX, Roll: "ANSI_MAGENTA"%ld"ANSI_WHITE" \t| Walk: "ANSI_RED"%s"ANSI_WHITE" \t| Message: "ANSI_RED"%s"ANSI_WHITE"\n", iteration, startingSeed, diceRoll, speedsText[i], speedsText[j]);
+                // printf("Seed before blocks: %08lX\n", BeforeHiddenBlocksSeed);
+                // printf("Seed after blocks: %08lX\n", AfterHiddenBlocksSeed);
+                //printf("Coin: %02X, Star: %02X, Item: %02X\n", blockData.coinBlockSpaceIndex, blockData.starBlockSpaceIndex, blockData.itemBlockSpaceIndex);
+                printf("Calls: "ANSI_YELLOW"%ld"ANSI_WHITE", Seed: %08X, Roll: "ANSI_MAGENTA"%d"ANSI_WHITE" \t| Walk: "ANSI_RED"%s"ANSI_WHITE" \t| Message: "ANSI_RED"%s"ANSI_WHITE"\n", iteration, startingSeed, diceRoll, speedsText[i], speedsText[j]);
             }
             cur_rng_seed = prevSeed;
         }
     }
 }
 
+void ReadParametersFromFile(const char* filename, u32* startSpace, u32* nextSpace, u32* endSpace, u32* board, u32* roll, u32* starSpaceIndex) {
+    FILE* file = fopen(filename, "r");
+    if (file == NULL) {
+        perror("Failed to open input file");
+        exit(EXIT_FAILURE);
+    }
+
+    char line[256];
+    char valueStr[256];
+    while (fgets(line, sizeof(line), file)) {
+        if (sscanf(line, "StartSpace: %s", valueStr) == 1) {
+            if (strstr(valueStr, "0x") == valueStr) {
+                sscanf(valueStr, "0x%x", startSpace);
+            } else {
+                *startSpace = (u32)atoi(valueStr);
+            }
+        } else if (sscanf(line, "NextSpace: %s", valueStr) == 1) {
+            if (strstr(valueStr, "0x") == valueStr) {
+                sscanf(valueStr, "0x%x", nextSpace);
+            } else {
+                *nextSpace = (u32)atoi(valueStr);
+            }
+        } else if (sscanf(line, "EndSpace: %s", valueStr) == 1) {
+            if (strstr(valueStr, "0x") == valueStr) {
+                sscanf(valueStr, "0x%x", endSpace);
+            } else {
+                *endSpace = (u32)atoi(valueStr);
+            }
+        } else if (sscanf(line, "Board: %s", valueStr) == 1) {
+            if (strstr(valueStr, "0x") == valueStr) {
+                sscanf(valueStr, "0x%x", board);
+            } else {
+                *board = (u32)atoi(valueStr);
+            }
+        } else if (sscanf(line, "Roll: %s", valueStr) == 1) {
+            if (strstr(valueStr, "0x") == valueStr) {
+                sscanf(valueStr, "0x%x", roll);
+            } else {
+                *roll = (u32)atoi(valueStr);
+            }
+        } else if (sscanf(line, "Star: %s", valueStr) == 1) {
+            if (strstr(valueStr, "0x") == valueStr) {
+                sscanf(valueStr, "0x%x", starSpaceIndex);
+            } else {
+                *starSpaceIndex = (u32)atoi(valueStr);
+            }
+        }
+    }
+
+    fclose(file);
+}
+
 //70 calls from after block spawn to beginning of dice roll rng
-void SetStarSpawnDataChillyWaters(s32 index);
+// void SetStarSpawnDataChillyWaters(s32 index);
+void SetStarSpawnData(s32 starSpawnIndex, s32 boardIndex);
+// extern u8** StarSpawnFlags[];
 
 int main(int argc, char* argv[]) {
-    u32 roll = 2;
     u32 prevSeed = cur_rng_seed;
+    u32 startSpace = -1, nextSpace = -1, endSpace = -1, board = -1, roll = -1, starSpaceIndex = -1;
     Player* player = GetPlayerStruct(-1);
-    SetStarSpawnDataChillyWaters(0);
+    ReadParametersFromFile("input.txt", &startSpace, &nextSpace, &endSpace, &board, &roll, &starSpaceIndex);
 
+    printf(
+        "StartSpace: 0x%02X\n"
+        "NextSpace: 0x%02X\n"
+        "EndSpace: 0x%02X\n"
+        "Board: %d\n"
+        "Roll: %d\n"
+        "Star: %d\n",
+        startSpace, nextSpace, endSpace, board, roll, starSpaceIndex
+        );
+
+    gGameStatus.boardIndex = board;
+    if (starSpaceIndex >= 8) {
+        printf(ANSI_RED "Error: Invalid star space index of %d passed. max is 7\n" ANSI_RESET, starSpaceIndex);
+        return EXIT_FAILURE;
+    }
+
+    SetStarSpawnData(starSpaceIndex, CHILLY_WATERS);
+
+    //simulate first 3000 seeds
     for (s32 i = 0; i < 3000; i++) {
-        // u32 AbsSpace = GetChainAndSpaceFromAbsSpace(0x6B);
-        // gPlayers[0].cur_chain_index = AbsSpace >> 16;
-        // gPlayers[0].cur_space_index = AbsSpace & 0xFFFF;
-
-        // u32 AbsSpaceNext = GetChainAndSpaceFromAbsSpace(0x00);
-        // gPlayers[0].next_chain_index = AbsSpaceNext >> 16;
-        // gPlayers[0].next_space_index = AbsSpaceNext & 0xFFFF;
-
-        DoPlayerTurn(CHILLY_WATERS, roll, i);
+        ResetStarSpaces(gGameStatus.boardIndex);
+        SetStarSpace(starSpaceIndex, gGameStatus.boardIndex);
+        DoPlayerTurn(roll, i, startSpace, nextSpace, endSpace, gGameStatus.boardIndex);
         ADV_SEED(prevSeed);
         cur_rng_seed = prevSeed;
     }
-
-    
     // printf("Chain: %02X, Space: %02X", AbsSpace >> 16, AbsSpace & 0xFFFF);
 
-    
-
-    // for (int i = 0; i < 3; i++) {
-    //     for (int j = 0; j < 3; j++) {
-    //         gPlayers[0].cur_chain_index = 0;
-    //         gPlayers[0].cur_space_index = 0;
-
-    //         gPlayers[0].next_chain_index = 1;
-    //         gPlayers[0].next_space_index = 6;
-    //         CPUWalkSpaces(roll, i, j); //fast walk, fast message speeds
-    //         ADV_SEED(prevSeed);
-    //         cur_rng_seed = prevSeed;
-    //     }
-    // }
-
-
-    // u32 calls = 0;
-    // calls = MeasureRngCalls(0xF7203643, 0xA2DF5357);
-    // printf("Calls: %d", calls);
-    // for (int i = 0; i < ARRAY_COUNT(chilly_waters_spaces); i++) {
-    //     printf("Space 0x%02X: %d\n", i, chilly_waters_spaces[i].space_type);
-    // }
     return EXIT_SUCCESS;
 }
