@@ -106,8 +106,6 @@ s16 RunDecisionTree(DecisionTreeNonLeafNode* currentNode, s32 nodeTotal) {
             printf(ANSI_RED "Error: tried to access a node not in bounds of array\n" ANSI_RESET);
             return -1;
         }
-        //printf("Parsing Node:\n");
-        //printf(" Type: %d\n node_data1 0x%08lX\n node_data2 0x%08lX\n", var_s1->type, var_s1->node_data1.data, var_s1->node_data2.data);
         switch (var_s1->type) {                              /* switch 1 */
         case 1:                                         /* switch 1 */
             if (PlayerHasCoins(-1, var_s1->node_data1.data) != 0) {
@@ -314,7 +312,9 @@ s16 RunDecisionTree(DecisionTreeNonLeafNode* currentNode, s32 nodeTotal) {
 
         switch (GetPlayerStruct(-1)->cpu_difficulty) {
             case 0:
-                var_v0_7 = var_s1->node_data2.data_u8[3] & 0x7F;
+                //I believe this accounts for big endian -> little endian conversion
+                var_v0_7 = (var_s1->node_data2.data >> 0) & 0x7F;
+                // var_v0_7 = var_s1->node_data2.data_u8[3] & 0x7F;
                 break;
             case 1:
                 var_v0_7 = (var_s1->node_data2.data >> 7) & 0x7F;
@@ -329,12 +329,15 @@ s16 RunDecisionTree(DecisionTreeNonLeafNode* currentNode, s32 nodeTotal) {
                 var_v0_7 = 0;
                 break;
         }
-        // printf("Value passed to RNGPercentChance is %08X\n", var_v0_7);
+        //printf("var_v0_7 is %08X\n", var_v0_7);
+        //printf("Seed before Junction is %08X\n", cur_rng_seed);
         int rngResult = RNGPercentChance(var_v0_7);
-        //printf("Result %d, Node Data: %08lX\n", rngResult, var_s1->node_data2.data);
+        
         if (rngResult != 0) {
+            //printf("result is %08X\n", (var_s1->node_data2.data >> 0x1C) & 1);
             return (var_s1->node_data2.data >> 0x1C) & 1;
         } else {
+            //printf("result is %08X\n", ((var_s1->node_data2.data >> 0x1C) ^ 1) & 1);
             return ((var_s1->node_data2.data >> 0x1C) ^ 1) & 1;
         }
     }

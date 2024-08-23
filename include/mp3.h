@@ -7,6 +7,8 @@
 #define FALSE 0
 #define TRUE 1
 
+#define SET_CURRENT 0
+#define SET_NEXT 1
 
 typedef uint32_t u32;
 typedef long s32;
@@ -209,7 +211,7 @@ s32 IsFlagSet(s32);
 s32 func_8004FEBC(s16);
 s32 PlayerHasCoins(s32 playerIndex, s32 coinAmount);
 Player* GetPlayerStruct(s32);
-
+u32 GetChainAndSpaceFromAbsSpace(s32 space);;
 u8 RollDice(void);
 u8 rollDice2(void);
 s32 func_800EEF80_102BA0(f32 arg0);

@@ -18,8 +18,13 @@ s16 ChillyWatersStarSpaces[] = { //data for chilly waters
     0x0036, 0x002F, 0x005E, 0x0012, 0x0051, 0x0060, 0x004D, 0x0029,
 };
 
+s16 DeepBlooperSeaStarSpaces[] = {
+    0x001E, 0x0028, 0x0015, 0x0007, 0x0041, 0x005C, 0x004C, 0x0056
+};
+
 s16* StarSpaceArray[] = {
-    ChillyWatersStarSpaces
+    ChillyWatersStarSpaces,
+    DeepBlooperSeaStarSpaces,
 };
 
 //i think this is only 8 in size, made it 16 for safety
@@ -63,7 +68,6 @@ u8 D_80101468_115088[] = { //data for chilly waters (all boards?)
 };
 
 s16 func_800EBCD4_FF8F4(u8 arg0, s32 numOfBoardSpaces, s32 boardIndex) {
-    //printf("func_800EB5DC_FF1FC(2, %d, 0x%02X, %d)\n", arg0, numOfBoardSpaces, boardIndex);
     return func_800EB5DC_FF1FC(2, arg0, numOfBoardSpaces, boardIndex);
 }
 
@@ -108,7 +112,6 @@ s16 func_800EB5DC_FF1FC(s32 arg0, u8 arg1, s32 numOfBoardSpaces, s32 boardIndex)
     for (i = 0;; i = (++i < numOfBoardSpaces) ? i : 0) {
         temp_a1 = GetSpaceData(i, boardIndex);
         for (j = 0; j < D_801054F8; j++) {
-            //TODO: get spaces for each individual board
             if (StarSpaceArray[boardIndex][j] == i) {
                 break;
             }
@@ -142,69 +145,6 @@ s16 func_800EB5DC_FF1FC(s32 arg0, u8 arg1, s32 numOfBoardSpaces, s32 boardIndex)
     return i;
 }
 
-// s16 func_800EB5DC_FF1FC(s32 arg0, u8 arg1, s32 numOfBoardSpaces, s32 boardIndex) {
-//     s32 var_s1;
-//     u8 var_s1_2;
-//     SpaceData* temp_a1;
-//     s32 i, j;
-//     s32 tempVar;
-//     var_s1 = 0;
-
-//     //find valid spaces block could go
-//     for (i = 0; i < numOfBoardSpaces; i++) {
-//         u32 result = (D_80101468_115088[(GetSpaceData(i, boardIndex)->space_type & 0xF)] & (u16)arg0);
-//         if (result){
-//             var_s1++;
-//         }
-//     }
-
-//     var_s1_2 = var_s1 - D_801054F8;
-//     if ((arg1) < 5U) {
-//         var_s1_2 = var_s1_2 - D_801054B6;
-//     }
-
-//     var_s1_2 = func_800EEF80_102BA0((var_s1_2));
-
-//     tempVar = (arg1 & 0xFF) < 5;
-
-//     for (i = 0;; i = -(i < numOfBoardSpaces) & i) {
-//         temp_a1 = GetSpaceData(i, boardIndex);
-//         for (j = 0; j < D_801054F8; j++) {
-//             if (ChillyWatersStarSpaces[j] == i) {
-//                 break;
-//             }
-//         }
-
-//         if (j != D_801054F8) {
-//             i++;
-//             continue;
-//         } else {
-//             if (tempVar != 0) {
-//                 for (j = 0; j < D_801054B6; j++) {
-//                     if (D_801052B8[j] == i) {
-//                         break;
-//                     }
-//                 }
-            
-//                 if (j != D_801054B6) {
-//                     i++;
-//                     continue;
-//                 }            
-//             }
-//         }
-//         if ( !(D_80101468_115088[(temp_a1->space_type & 0xF)] & (u16)arg0)){
-//             i++;
-//             continue;
-//         } else if ((var_s1_2 & 0xFF) == 0) {
-//             break;
-//         }
-//         var_s1_2--;
-//         i++;
-//     }
-
-//     return i;
-// }
-
 //func_800FC594_1101B4
 void PlaceHiddenBlocksMain(Blocks* blocks, s32 numOfSpaces, s32 boardIndex) {
     D_800D03FC = 0;
@@ -213,19 +153,15 @@ void PlaceHiddenBlocksMain(Blocks* blocks, s32 numOfSpaces, s32 boardIndex) {
     if (func_80035F98_36B98(0xF) != 0) {
         while (blocks->coinBlockSpaceIndex == -1 || blocks->coinBlockSpaceIndex == blocks->starBlockSpaceIndex || blocks->coinBlockSpaceIndex == blocks->itemBlockSpaceIndex) {
             blocks->coinBlockSpaceIndex = func_800EBCD4_FF8F4(D_800D03FC, numOfSpaces, boardIndex);
-            //printf("Coin Block Set To %02X\n", blocks->coinBlockSpaceIndex);
             D_800D03FC += 1;
         }
         while (blocks->starBlockSpaceIndex == -1 || blocks->coinBlockSpaceIndex == blocks->starBlockSpaceIndex || blocks->itemBlockSpaceIndex == blocks->starBlockSpaceIndex) {
             blocks->starBlockSpaceIndex = func_800EBCD4_FF8F4(D_800CE208, numOfSpaces, boardIndex);
-            //printf("Star Block Set To %02X\n", blocks->starBlockSpaceIndex);
             D_800CE208 += 1;
         }
         while (blocks->itemBlockSpaceIndex == -1 || blocks->coinBlockSpaceIndex == blocks->itemBlockSpaceIndex || blocks->starBlockSpaceIndex == blocks->itemBlockSpaceIndex) {
             blocks->itemBlockSpaceIndex = func_800EBCD4_FF8F4(D_800CDD68, numOfSpaces, boardIndex);
-            //printf("Item Block Set To %02X\n", blocks->itemBlockSpaceIndex);
             D_800CDD68 += 1;
         }
-        //printf("\n");
     }
 }

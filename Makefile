@@ -19,6 +19,7 @@ all: $(TARGET)
 # Rule to build the executable
 $(TARGET): $(OBJECTS)
 	@$(CC) $(CFLAGS) $(INCLUDES) -o $@ $^
+	@echo "Compiled successfully: $(TARGET)"
 
 # Rule to build the debug version of the executable
 debug: CFLAGS += $(DEBUG_FLAGS)

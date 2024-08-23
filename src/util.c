@@ -1,4 +1,5 @@
 #include "mp3.h"
+#include "util.h"
 #include <stdio.h>
 
 #define FAST_TEXT 0
@@ -30,10 +31,6 @@ s32 CpuSelectionArray2[] = {108, 188, 328};
 //advancements that happen while a cpu is at a bank at all 3 message speeds
 s32 CpuBankRngAdvancements[] = {159, 199, 269};
 
-extern SpaceChain ChillyWatersChains[];
-extern u8* ChillyWatersStarSpawnFlags[];
-extern u8** StarSpawnFlags[];
-
 GameStatus gGameStatus = {
     .unk0 = 1,
     .boardIndex = CHILLY_WATERS,
@@ -50,34 +47,23 @@ GameStatus gGameStatus = {
     .D_800CD0B6 = {0x00, 0x00, 0x00, 0x00}, //is this longer?
 };
 
-/*
-0x89BF - 0
-0x49BF - 1
-0xC9BE - 2
-0xC9BD - 3
-0xC9BB - 4
-0xC9B7 - 5
-0xC9AF - 6
-0xC99F - 7
-*/
-
-u8 arrayThing[][2] = {
-    {0x89, 0xBF}, //0
-    {0x49, 0xBF}, //1
-    {0xC9, 0xBE}, //2
-    {0xC9, 0xBD}, //3
-    {0xC9, 0xBB}, //4
-    {0xC9, 0xB7}, //5
-    {0xC9, 0xAF}, //6
-    {0xC9, 0x9F}, //7
+u8 StarSpaceFlagArray[][2] = {
+    {0x89, 0xBF}, //star space index 0
+    {0x49, 0xBF}, //star space index 1
+    {0xC9, 0xBE}, //star space index 2
+    {0xC9, 0xBD}, //star space index 3
+    {0xC9, 0xBB}, //star space index 4
+    {0xC9, 0xB7}, //star space index 5
+    {0xC9, 0xAF}, //star space index 6
+    {0xC9, 0x9F}, //star space index 7
 };
 
 
 
 void SetStarSpawnData(s32 starSpawnIndex, s32 boardIndex) {
     //only first 2 bytes matter
-    gGameStatus.D_800CD0B6[0] = arrayThing[starSpawnIndex][0];
-    gGameStatus.D_800CD0B6[1] = arrayThing[starSpawnIndex][1];
+    gGameStatus.D_800CD0B6[0] = StarSpaceFlagArray[starSpawnIndex][0];
+    gGameStatus.D_800CD0B6[1] = StarSpaceFlagArray[starSpawnIndex][1];
 
     printf("[0]: %02X, [1]: %02X, [2]: %02X, [3]: %02X\n", gGameStatus.D_800CD0B6[0], gGameStatus.D_800CD0B6[1], gGameStatus.D_800CD0B6[2], gGameStatus.D_800CD0B6[3]);
 }
@@ -98,15 +84,14 @@ u8 rand8(void) {
     return (cur_rng_seed + 1) >> 16;
 }
 
+//func_800ECE9C
 s16 RNGPercentChance(s8 percentChance) {
     u32 result;
     u32 randVal;
 
-    //printf(ANSI_CYAN "Probability: %d\n" ANSI_RESET, percentChance);
     randVal = rand8();
+    //printf("randVal is %08X\n", randVal);
     result = (percentChance > ((randVal * 99) >> 8));
-    //printf(ANSI_CYAN "Rand: %ld\n" ANSI_RESET, randVal);
-    //printf(ANSI_CYAN "Outcome: %ld\n" ANSI_RESET, result);
 
     return result;
 }
@@ -150,13 +135,30 @@ u32 MeasureRngCalls(u32 seedStart, u32 seedEnd) {
 }
 
 s32 GetSpaceIndexFromChainAndSpace(s32 curChainIndex, s32 curSpaceIndex) {
-    s16* curSpaceChain = ChillyWatersChains[curChainIndex].spaceChainArray;
+    SpaceChain* curBoardChains = BoardChains[gGameStatus.boardIndex].boardChainData;
+    s16* curSpaceChain = curBoardChains[curChainIndex].spaceChainArray;
     return curSpaceChain[curSpaceIndex];
 }
 
+void SetPlayerNextChainAndSpaceFromAbsSpace(s32 absSpace, s32 mode) {
+    u32 AbsSpace = GetChainAndSpaceFromAbsSpace(absSpace);
+
+    switch (mode) {
+    case SET_CURRENT:
+        gPlayers[0].cur_chain_index = AbsSpace >> 16;
+        gPlayers[0].cur_space_index = AbsSpace & 0xFFFF;
+        break;
+    case SET_NEXT:
+        gPlayers[0].next_chain_index = AbsSpace >> 16;
+        gPlayers[0].next_space_index = AbsSpace & 0xFFFF;
+        break;
+    }
+}
+
 //handles all rng related things starting at decision of item space event
-s32 HandleLogicFromItemSpace(s32 messageSpeed) {
-    //printf("Seed before event: %08lX\n", cur_rng_seed);
+s32 HandleLogicFromItemSpace(s32 messageSpeed, s16* data) {
+    u32 rngBeforeItemSpaceResult = cur_rng_seed;
+    
     s32 itemSpaceOutcome = func_800EEF80_102BA0(5.0f);
     if (itemSpaceOutcome != TOAD_QUESTION) {
         return 0;
@@ -215,6 +217,10 @@ s32 HandleLogicFromItemSpace(s32 messageSpeed) {
 
     s32 itemChosen = func_800EEF80_102BA0(4);
     if (itemChosen == RARE_ITEM_WATCH) {
+        // for (int j = 0; j < 7; j++) {
+        //     printf("Space: %04X\n", data[j]);
+        // }
+        //printf("Seed Before item space is %08X\n", rngBeforeItemSpaceResult);
         return 1;
     }
     return 0;
