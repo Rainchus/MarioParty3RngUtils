@@ -98,6 +98,7 @@ s32 CPUWalkSpaces(s32 diceRoll, s32 walkSpeed, s32 messageSpeed) {
             }
             //function pointer does exist, run function
             //TODO: be sure to fill in *all* rng advacements here
+            //TODO: implement code jumps before and after junction
             funcEventResult = space->eventFunction(space->functionData);
             switch (funcEventResult) {
             case NORMAL_RETURN:
@@ -165,6 +166,8 @@ void DoPlayerTurn(s32 wantedRoll, s32 iteration, s32 absSpaceStart, s32 absSpace
     if (diceRoll != wantedRoll) {
         return;
     }
+
+    
 
     //save seed before simulation is ran
     prevSeed = cur_rng_seed;
@@ -265,7 +268,6 @@ int main(int argc, char* argv[]) {
     }
 
     SetStarSpawnData(starSpaceIndex, board);
-
     //simulate first 3000 seeds
     for (s32 i = 0; i < 3000; i++) {
         ResetStarSpaces(gGameStatus.boardIndex);
