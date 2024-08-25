@@ -4,6 +4,8 @@
 //TODO: set this value accordingly
 // u32 cur_rng_seed = 0;  //(at address 0x80097650)
 
+s16 D_80100D50_114970[] = {6, 7, 8, 9, 10, 11, 12, 13}; //unknown, extract from chilly waters
+
 extern u32 cur_rng_seed;
 
 s32 PlayerHasCoins(s32 index, s32 count) {

@@ -1,6 +1,7 @@
 #include "mp3.h"
 #include "util.h"
 #include <stdio.h>
+#include <math.h>
 
 #define FAST_TEXT 0
 #define NORMAL_TEXT 1
@@ -18,7 +19,23 @@
 #define BOTTOM_OPTION 2
 
 u32 cur_rng_seed = 0x0000D9ED; //initial starting seed D_80097650
-//
+
+Vec2f D_80101D5C_11597C[] = {
+    {0.0f, 0.0f},
+    {200.0f, 250.0f},
+    {110.0f, 250.0f},
+    {70.0f, 290.0f},
+    {0.0f, 360.0f},
+};
+
+Vec2f D_80101D84_1159A4[] = {
+    {0.0f, 0.0f},
+    {20.0f, 70.0f},
+    {-70.0f, 70.0f},
+    {70.0f, 290.0f},
+    {0.0f, 360.0f}
+};
+
 s32 framesForInitialTextBoxes[] = {648, 728, 868};
 
 //advancements that happen during cpu selection on each message speed
@@ -57,7 +74,6 @@ u8 StarSpaceFlagArray[][2] = {
     {0xC9, 0xAF}, //star space index 6
     {0xC9, 0x9F}, //star space index 7
 };
-
 
 
 void SetStarSpawnData(s32 starSpawnIndex, s32 boardIndex) {
@@ -140,17 +156,18 @@ s32 GetSpaceIndexFromChainAndSpace(s32 curChainIndex, s32 curSpaceIndex) {
     return curSpaceChain[curSpaceIndex];
 }
 
-void SetPlayerNextChainAndSpaceFromAbsSpace(s32 absSpace, s32 mode) {
+void SetPlayerNextChainAndSpaceFromAbsSpace(s32 absSpace, s32 mode, s32 playerIndex) {
+    Player* player = &gPlayers[playerIndex];
     u32 AbsSpace = GetChainAndSpaceFromAbsSpace(absSpace);
 
     switch (mode) {
     case SET_CURRENT:
-        gPlayers[0].cur_chain_index = AbsSpace >> 16;
-        gPlayers[0].cur_space_index = AbsSpace & 0xFFFF;
+        player->cur_chain_index = AbsSpace >> 16;
+        player->cur_space_index = AbsSpace & 0xFFFF;
         break;
     case SET_NEXT:
-        gPlayers[0].next_chain_index = AbsSpace >> 16;
-        gPlayers[0].next_space_index = AbsSpace & 0xFFFF;
+        player->next_chain_index = AbsSpace >> 16;
+        player->next_space_index = AbsSpace & 0xFFFF;
         break;
     }
 }
@@ -282,5 +299,171 @@ int GetStarBitIndex(u32 value) {
         return 7;
     default:
         return -1;
+    }
+}
+
+void HuVecSubtract(Vec3f * dest, Vec3f * a, Vec3f * b) {
+    float x = a->x - b->x;
+    float y = a->y - b->y;
+    float z = a->z - b->z;
+
+    dest->x = x;
+    dest->y = y;
+    dest->z = z;
+}
+
+typedef struct Chain {
+    u16 count;
+    s16* spaces;
+} Chain;
+
+extern Chain* D_80105218;
+
+f32 D_800A46A0_A52A0[] = {
+    0.0f, 1.0f, 0.5f, 0.3333333433f, 0.25f, 0.200000003f, 0.1666666716f, 0.1428571492f, 0.125f, 0.1111111119f, 0.1000000015f, 0.09090909362f, 0.08333333582f, 0.07692307979f, 0.07142857462f, 0.06666667014f, 0.0625f, 0.05882352963f, 0.05555555597f, 0.05263157934f, 0.05000000075f, 0.04761904851f, 0.04545454681f, 0.04347826168f, 0.04166666791f, 0.03999999911f, 0.03846153989f, 0.03703703731f, 0.03571428731f, 0.03448275849f, 0.03333333507f, 0.03225806355f, 0.03125f, 0.03030303121f, 0.02941176482f, 0.02857142873f, 0.02777777798f, 0.02702702768f, 0.02631578967f, 0.02564102598f, 0.02500000037f, 0.02439024299f, 0.02380952425f, 0.02325581387f, 0.0227272734f, 0.02222222276f, 0.02173913084f, 0.02127659507f, 0.02083333395f, 0.02040816285f, 0.01999999955f, 0.01960784383f, 0.01923076995f, 0.01886792481f, 0.01851851866f, 0.01818181761f, 0.01785714366f, 0.01754385978f, 0.01724137925f, 0.01694915257f, 0.01666666754f, 0.01639344171f, 0.01612903178f, 0.01587301679f, 0.015625f, 0.0153846154f, 0.0151515156f, 0.01492537279f, 0.01470588241f, 0.01449275389f, 0.01428571437f, 0.01408450678f, 0.01388888899f, 0.01369863003f, 0.01351351384f, 0.01333333366f, 0.01315789483f, 0.01298701297f, 0.01282051299f, 0.01265822817f, 0.01250000019f, 0.0123456791f, 0.0121951215f, 0.01204819232f, 0.01190476213f, 0.01176470611f, 0.01162790693f, 0.01149425283f, 0.0113636367f, 0.01123595517f, 0.01111111138f, 0.01098901127f, 0.01086956542f, 0.01075268816f, 0.01063829754f, 0.01052631624f, 0.01041666698f, 0.01030927803f, 0.01123595517f, 0.01010101009f
+};
+
+f32 D_800A8A34_A9634 = -3.14159f;
+
+
+f32 func_8008DE10_8EA10(f32 arg0, f32 arg1) {
+    f32 temp_f0;
+    f32 temp_f14;
+    f32 temp_f16;
+    f32 temp_f18;
+    f32 temp_f4;
+    f32 var_f0;
+    f32 var_f2;
+    s32 var_v0;
+    
+    if (arg0 == 0.0f) {
+        return (arg1 > 0.0f) ? 0.0f: 3.14159f;
+    }
+    if (arg1 == 0.0f) {
+        return (arg0 > 0.0f) ? 1.5708f: -1.5708f;
+    }
+    temp_f18 = arg0 / arg1;
+    
+    if (temp_f18 == 1.0f) {
+        return (arg0 > 0.0f) ? 0.785398f: -2.35619f;
+    }
+    if (temp_f18 == -1.0f) {
+        return (arg1 > 0.0f) ? -0.785398f: 2.35619f;
+    }
+    if ((temp_f18 > 1.0f) || (temp_f18 < -1.0f)) {
+        temp_f0 = func_8008DE10_8EA10(arg1, arg0);
+        if (arg1 > 0.0f) {
+            return 1.5708f - temp_f0;
+        }
+        return (arg0 > 0.0f) ? 1.5708f - temp_f0 : -4.71239f - temp_f0;
+    }
+    temp_f16 = temp_f18 * temp_f18;
+    var_f2 = 1.0f;
+    temp_f4 = 1.0f / (1.0f + temp_f16);
+    temp_f14 = temp_f16 * temp_f4;
+    var_v0 = 4;
+    var_f0 = (2.0f * temp_f14) / 3.0f;
+    for (; var_v0 < 100; var_v0+=2) {
+        var_f2 += var_f0;
+        if (!(var_f0 <= 1e-07f)) {
+            var_f0 *= (temp_f14 * (f32) var_v0) * D_800A46A0_A52A0[var_v0+1];
+        } else {
+            break;
+        }
+    }
+
+    var_f2 *= (temp_f18 * temp_f4);
+    return (arg1 > 0.0f) ? var_f2 : (arg0 > 0.0f) ? 3.14159f + var_f2: -3.14159f + var_f2;
+}
+
+f32 func_8008E108_8ED08(f32 zPos, f32 xPos) {
+    return func_8008DE10_8EA10(zPos, xPos) * 57.2958f;
+}
+
+f32 func_800D8790_EC3B0(Vec3f* arg0) {
+    f32 temp_f4;
+
+    if (arg0->x != 0.0f || arg0->z != 0.0f) {
+        if (arg0->x == 0.0f) {
+            if (arg0->z > 0.0f) {
+                return 0.0f;
+            }
+            return 180.0f;
+        }
+        if (arg0->z == 0.0f) {
+            if (arg0->x > 0.0f) {
+                return 90.0f;
+            } else {
+                return 270.0f;
+            }
+        }
+
+        temp_f4 = func_8008E108_8ED08(arg0->z, arg0->x);
+        if (arg0->z < 0.0f) {
+            temp_f4 = 90.0f - temp_f4;
+        } else {
+            temp_f4 = 90.0f - temp_f4;
+            if (temp_f4 < 0.0f) {
+                temp_f4 += 360.0f;
+            }
+        }
+        return temp_f4;
+    } else {
+        return -1.0f;
+    }
+}
+
+//if player should jump to next space
+s32 func_800F9A68_10D688(s32 arg0) {
+    Vec3f sp10;
+    Player* curPlayer;
+    Player* player;
+    f32 var_f4;
+    SpaceData* space;
+    SpaceData* nextSpace;
+    s32 var_s2;
+    s32 var_s4;
+    s32 i;
+    Vec3f* temp;
+
+    curPlayer = GetPlayerStruct(arg0);
+    var_s2 = 0;
+    var_s4 = 0;
+
+    for (i = 0; i < 4; i++) {
+        if (i == arg0) {
+            continue;
+        }
+        player = GetPlayerStruct(i);
+        if (curPlayer->cur_chain_index == player->cur_chain_index) {
+            var_s4 += curPlayer->cur_space_index == player->cur_space_index;
+        }
+        if (curPlayer->next_chain_index == player->cur_chain_index) {
+            var_s2 += curPlayer->next_space_index == player->cur_space_index;
+        }        
+    }
+
+    s32 spaceIDCur = GetSpaceIndexFromChainAndSpace(curPlayer->cur_chain_index, curPlayer->cur_space_index);
+    space = GetSpaceData(spaceIDCur);
+    s32 spaceIDNext = GetSpaceIndexFromChainAndSpace(curPlayer->next_chain_index, curPlayer->next_space_index);
+    nextSpace = GetSpaceData(spaceIDNext);
+    HuVecSubtract(&sp10, &nextSpace->coords, &space->coords);
+    var_f4 = func_800D8790_EC3B0(&sp10);
+
+    if ((var_s4 == 0) || (!(D_80101D5C_11597C[var_s4].x < var_f4)) || (!(var_f4 <= D_80101D5C_11597C[var_s4].y))) {
+        if (var_s2 != 0) {
+            if (D_80101D84_1159A4[var_s2].x < 0.0f) {
+                var_f4 -= 360.0f;
+            }
+            if (!(D_80101D84_1159A4[var_s2].x < var_f4) || (!(var_f4 <= D_80101D84_1159A4[var_s2].y))) {
+                return 0;
+            } else {
+                return 1;
+            }
+        } else {
+            return 0;
+        }
+    } else {
+        return 1;
     }
 }

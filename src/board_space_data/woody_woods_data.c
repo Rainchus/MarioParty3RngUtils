@@ -159,6 +159,24 @@ s16 WoodyWoodsSpaces_0E[] = {
  0x006B,
 };
 
+SpaceChain WoodyWoodsChains[] = {
+    {ARRAY_COUNT(WoodyWoodsSpaces_00), WoodyWoodsSpaces_00},
+    {ARRAY_COUNT(WoodyWoodsSpaces_01), WoodyWoodsSpaces_01},
+    {ARRAY_COUNT(WoodyWoodsSpaces_02), WoodyWoodsSpaces_02},
+    {ARRAY_COUNT(WoodyWoodsSpaces_03), WoodyWoodsSpaces_03},
+    {ARRAY_COUNT(WoodyWoodsSpaces_04), WoodyWoodsSpaces_04},
+    {ARRAY_COUNT(WoodyWoodsSpaces_05), WoodyWoodsSpaces_05},
+    {ARRAY_COUNT(WoodyWoodsSpaces_06), WoodyWoodsSpaces_06},
+    {ARRAY_COUNT(WoodyWoodsSpaces_07), WoodyWoodsSpaces_07},
+    {ARRAY_COUNT(WoodyWoodsSpaces_08), WoodyWoodsSpaces_08},
+    {ARRAY_COUNT(WoodyWoodsSpaces_09), WoodyWoodsSpaces_09},
+    {ARRAY_COUNT(WoodyWoodsSpaces_0A), WoodyWoodsSpaces_0A},
+    {ARRAY_COUNT(WoodyWoodsSpaces_0B), WoodyWoodsSpaces_0B},
+    {ARRAY_COUNT(WoodyWoodsSpaces_0C), WoodyWoodsSpaces_0C},
+    {ARRAY_COUNT(WoodyWoodsSpaces_0D), WoodyWoodsSpaces_0D},
+    {ARRAY_COUNT(WoodyWoodsSpaces_0E), WoodyWoodsSpaces_0E},
+};
+
 SpaceData woody_woods_spaces[] = {
 /* 0x000 */ {0x01, 0x01, 0x0000, 0x00000000,  { 210.0000f, 0.0000f, 210.0000f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000, 0x0000 },
 /* 0x001 */ {0x01, 0x02, 0x0000, 0x01000203,  { 210.0000f, 0.0000f, 130.0000f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000, 0x0000 },
@@ -304,25 +322,6 @@ SpaceData woody_woods_spaces[] = {
 /* 0x08D */ {0x01, 0x03, 0x0000, 0x0000FFF0,  { 65.0000f, 0.0000f, -235.0000f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000, 0x0000 },
 /* 0x08E */ {0x01, 0x08, 0x0000, 0x00000000,  { -25.0000f, 0.0000f, -240.0000f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000, 0x0000 },
 /* 0x08F */ {0x01, 0x08, 0x0000, 0x0F00F000,  { -190.0000f, 0.0000f, -75.0000f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000, 0x0000 },
-
-};
-
-SpaceChain WoodyWoodsChains[] = {
-    {ARRAY_COUNT(WoodyWoodsSpaces_00), WoodyWoodsSpaces_00},
-    {ARRAY_COUNT(WoodyWoodsSpaces_01), WoodyWoodsSpaces_01},
-    {ARRAY_COUNT(WoodyWoodsSpaces_02), WoodyWoodsSpaces_02},
-    {ARRAY_COUNT(WoodyWoodsSpaces_03), WoodyWoodsSpaces_03},
-    {ARRAY_COUNT(WoodyWoodsSpaces_04), WoodyWoodsSpaces_04},
-    {ARRAY_COUNT(WoodyWoodsSpaces_05), WoodyWoodsSpaces_05},
-    {ARRAY_COUNT(WoodyWoodsSpaces_06), WoodyWoodsSpaces_06},
-    {ARRAY_COUNT(WoodyWoodsSpaces_07), WoodyWoodsSpaces_07},
-    {ARRAY_COUNT(WoodyWoodsSpaces_08), WoodyWoodsSpaces_08},
-    {ARRAY_COUNT(WoodyWoodsSpaces_09), WoodyWoodsSpaces_09},
-    {ARRAY_COUNT(WoodyWoodsSpaces_0A), WoodyWoodsSpaces_0A},
-    {ARRAY_COUNT(WoodyWoodsSpaces_0B), WoodyWoodsSpaces_0B},
-    {ARRAY_COUNT(WoodyWoodsSpaces_0C), WoodyWoodsSpaces_0C},
-    {ARRAY_COUNT(WoodyWoodsSpaces_0D), WoodyWoodsSpaces_0D},
-    {ARRAY_COUNT(WoodyWoodsSpaces_0E), WoodyWoodsSpaces_0E},
 };
 
 //decision tree nodes for woody woods first junction

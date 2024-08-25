@@ -1,6 +1,175 @@
 #include "mp3.h"
 #include "util.h"
 
+s16 DeepBlooperSeaSpaces_00[] = {
+ 0x0011,
+ 0x0012,
+ 0x0013,
+ 0x0014,
+ 0x0015,
+ 0x0017,
+ 0x0018,
+ 0x0019,
+ 0x001A,
+ 0x001B,
+ 0x001C,
+ 0x001D,
+ 0x001E,
+ 0x001F,
+ 0x0020,
+ 0x0000,
+ 0x000B,
+ 0x0016,
+ 0x0021,
+ 0x002C,
+ 0x0068,
+};
+
+s16 DeepBlooperSeaSpaces_01[] = {
+ 0x0022,
+ 0x0023,
+ 0x0024,
+ 0x0025,
+};
+
+s16 DeepBlooperSeaSpaces_02[] = {
+ 0x0037,
+ 0x0042,
+ 0x004D,
+ 0x0073,
+ 0x0058,
+ 0x0001,
+ 0x0002,
+ 0x0003,
+ 0x0004,
+ 0x0005,
+ 0x0006,
+ 0x0007,
+ 0x0008,
+ 0x0009,
+ 0x000A,
+};
+
+s16 DeepBlooperSeaSpaces_03[] = {
+ 0x0026,
+ 0x0085,
+ 0x006A,
+ 0x0086,
+ 0x0027,
+ 0x0028,
+ 0x0029,
+};
+
+s16 DeepBlooperSeaSpaces_04[] = {
+ 0x000C,
+ 0x000D,
+ 0x000E,
+ 0x000F,
+ 0x0010,
+ 0x0084,
+};
+
+s16 DeepBlooperSeaSpaces_05[] = {
+ 0x007D,
+};
+
+s16 DeepBlooperSeaSpaces_06[] = {
+ 0x002A,
+ 0x002B,
+ 0x002D,
+ 0x002E,
+ 0x002F,
+ 0x0030,
+ 0x0031,
+ 0x0032,
+ 0x0033,
+ 0x0034,
+ 0x0035,
+ 0x0089,
+};
+
+s16 DeepBlooperSeaSpaces_07[] = {
+ 0x0036,
+ 0x0038,
+ 0x0039,
+ 0x003A,
+ 0x003B,
+ 0x003C,
+ 0x003D,
+ 0x003E,
+ 0x003F,
+ 0x0040,
+ 0x0041,
+ 0x0043,
+ 0x0044,
+ 0x0045,
+ 0x0046,
+ 0x0079,
+ 0x0047,
+ 0x0048,
+ 0x0049,
+ 0x004A,
+ 0x004B,
+ 0x004C,
+ 0x004E,
+};
+
+s16 DeepBlooperSeaSpaces_08[] = {
+ 0x005B,
+ 0x0069,
+ 0x005C,
+ 0x005D,
+};
+
+s16 DeepBlooperSeaSpaces_09[] = {
+ 0x0059,
+ 0x0087,
+ 0x006B,
+ 0x0088,
+ 0x005A,
+};
+
+s16 DeepBlooperSeaSpaces_0A[] = {
+ 0x004F,
+ 0x0050,
+ 0x0051,
+ 0x0052,
+ 0x0053,
+ 0x0054,
+ 0x0055,
+ 0x0056,
+ 0x0057,
+};
+
+s16 DeepBlooperSeaSpaces_0B[] = {
+ 0x0067,
+};
+
+s16 DeepBlooperSeaSpaces_0C[] = {
+ 0x0082,
+};
+
+s16 DeepBlooperSeaSpaces_0D[] = {
+ 0x0083,
+};
+
+SpaceChain DeepBlooperSeaChains[] = {
+    {ARRAY_COUNT(DeepBlooperSeaSpaces_00), DeepBlooperSeaSpaces_00},
+    {ARRAY_COUNT(DeepBlooperSeaSpaces_01), DeepBlooperSeaSpaces_01},
+    {ARRAY_COUNT(DeepBlooperSeaSpaces_02), DeepBlooperSeaSpaces_02},
+    {ARRAY_COUNT(DeepBlooperSeaSpaces_03), DeepBlooperSeaSpaces_03},
+    {ARRAY_COUNT(DeepBlooperSeaSpaces_04), DeepBlooperSeaSpaces_04},
+    {ARRAY_COUNT(DeepBlooperSeaSpaces_05), DeepBlooperSeaSpaces_05},
+    {ARRAY_COUNT(DeepBlooperSeaSpaces_06), DeepBlooperSeaSpaces_06},
+    {ARRAY_COUNT(DeepBlooperSeaSpaces_07), DeepBlooperSeaSpaces_07},
+    {ARRAY_COUNT(DeepBlooperSeaSpaces_08), DeepBlooperSeaSpaces_08},
+    {ARRAY_COUNT(DeepBlooperSeaSpaces_09), DeepBlooperSeaSpaces_09},
+    {ARRAY_COUNT(DeepBlooperSeaSpaces_0A), DeepBlooperSeaSpaces_0A},
+    {ARRAY_COUNT(DeepBlooperSeaSpaces_0B), DeepBlooperSeaSpaces_0B},
+    {ARRAY_COUNT(DeepBlooperSeaSpaces_0C), DeepBlooperSeaSpaces_0C},
+    {ARRAY_COUNT(DeepBlooperSeaSpaces_0D), DeepBlooperSeaSpaces_0D},
+};
+
 SpaceData deep_blooper_sea_spaces[] = {
 /* 0x000 */ {0x01, 0x01, 0x0000, 0x00000000,  { 195.0000f, 0.0000f, 210.0000f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000, 0x0000 },
 /* 0x001 */ {0x01, 0x01, 0x0000, 0x01000203,  { -145.0000f, 0.0000f, 210.0000f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000, 0x0000 },
@@ -181,175 +350,6 @@ DecisionTreeNonLeafNode DeepBlooperSeaJunction0Nodes[] = {
         .node_data2.data = 0x0B54233C,
         .isPointer = 0,
     }
-};
-
-s16 DeepBlooperSeaSpaces_00[] = {
- 0x0011,
- 0x0012,
- 0x0013,
- 0x0014,
- 0x0015,
- 0x0017,
- 0x0018,
- 0x0019,
- 0x001A,
- 0x001B,
- 0x001C,
- 0x001D,
- 0x001E,
- 0x001F,
- 0x0020,
- 0x0000,
- 0x000B,
- 0x0016,
- 0x0021,
- 0x002C,
- 0x0068,
-};
-
-s16 DeepBlooperSeaSpaces_01[] = {
- 0x0022,
- 0x0023,
- 0x0024,
- 0x0025,
-};
-
-s16 DeepBlooperSeaSpaces_02[] = {
- 0x0037,
- 0x0042,
- 0x004D,
- 0x0073,
- 0x0058,
- 0x0001,
- 0x0002,
- 0x0003,
- 0x0004,
- 0x0005,
- 0x0006,
- 0x0007,
- 0x0008,
- 0x0009,
- 0x000A,
-};
-
-s16 DeepBlooperSeaSpaces_03[] = {
- 0x0026,
- 0x0085,
- 0x006A,
- 0x0086,
- 0x0027,
- 0x0028,
- 0x0029,
-};
-
-s16 DeepBlooperSeaSpaces_04[] = {
- 0x000C,
- 0x000D,
- 0x000E,
- 0x000F,
- 0x0010,
- 0x0084,
-};
-
-s16 DeepBlooperSeaSpaces_05[] = {
- 0x007D,
-};
-
-s16 DeepBlooperSeaSpaces_06[] = {
- 0x002A,
- 0x002B,
- 0x002D,
- 0x002E,
- 0x002F,
- 0x0030,
- 0x0031,
- 0x0032,
- 0x0033,
- 0x0034,
- 0x0035,
- 0x0089,
-};
-
-s16 DeepBlooperSeaSpaces_07[] = {
- 0x0036,
- 0x0038,
- 0x0039,
- 0x003A,
- 0x003B,
- 0x003C,
- 0x003D,
- 0x003E,
- 0x003F,
- 0x0040,
- 0x0041,
- 0x0043,
- 0x0044,
- 0x0045,
- 0x0046,
- 0x0079,
- 0x0047,
- 0x0048,
- 0x0049,
- 0x004A,
- 0x004B,
- 0x004C,
- 0x004E,
-};
-
-s16 DeepBlooperSeaSpaces_08[] = {
- 0x005B,
- 0x0069,
- 0x005C,
- 0x005D,
-};
-
-s16 DeepBlooperSeaSpaces_09[] = {
- 0x0059,
- 0x0087,
- 0x006B,
- 0x0088,
- 0x005A,
-};
-
-s16 DeepBlooperSeaSpaces_0A[] = {
- 0x004F,
- 0x0050,
- 0x0051,
- 0x0052,
- 0x0053,
- 0x0054,
- 0x0055,
- 0x0056,
- 0x0057,
-};
-
-s16 DeepBlooperSeaSpaces_0B[] = {
- 0x0067,
-};
-
-s16 DeepBlooperSeaSpaces_0C[] = {
- 0x0082,
-};
-
-s16 DeepBlooperSeaSpaces_0D[] = {
- 0x0083,
-};
-
-SpaceChain DeepBlooperSeaChains[] = {
-    {ARRAY_COUNT(DeepBlooperSeaSpaces_00), DeepBlooperSeaSpaces_00},
-    {ARRAY_COUNT(DeepBlooperSeaSpaces_01), DeepBlooperSeaSpaces_01},
-    {ARRAY_COUNT(DeepBlooperSeaSpaces_02), DeepBlooperSeaSpaces_02},
-    {ARRAY_COUNT(DeepBlooperSeaSpaces_03), DeepBlooperSeaSpaces_03},
-    {ARRAY_COUNT(DeepBlooperSeaSpaces_04), DeepBlooperSeaSpaces_04},
-    {ARRAY_COUNT(DeepBlooperSeaSpaces_05), DeepBlooperSeaSpaces_05},
-    {ARRAY_COUNT(DeepBlooperSeaSpaces_06), DeepBlooperSeaSpaces_06},
-    {ARRAY_COUNT(DeepBlooperSeaSpaces_07), DeepBlooperSeaSpaces_07},
-    {ARRAY_COUNT(DeepBlooperSeaSpaces_08), DeepBlooperSeaSpaces_08},
-    {ARRAY_COUNT(DeepBlooperSeaSpaces_09), DeepBlooperSeaSpaces_09},
-    {ARRAY_COUNT(DeepBlooperSeaSpaces_0A), DeepBlooperSeaSpaces_0A},
-    {ARRAY_COUNT(DeepBlooperSeaSpaces_0B), DeepBlooperSeaSpaces_0B},
-    {ARRAY_COUNT(DeepBlooperSeaSpaces_0C), DeepBlooperSeaSpaces_0C},
-    {ARRAY_COUNT(DeepBlooperSeaSpaces_0D), DeepBlooperSeaSpaces_0D},
 };
 
 s16 DBS_Space_25[] = {

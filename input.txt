@@ -1,9 +1,13 @@
-StartSpace: 0x16
-NextSpace: 0x21
+StartSpace: 0x2C
+NextSpace: 0x37
 EndSpace: 0x58
+P2 Space: 0x2C
+P3 Space: 0x0B
+P4 Space: 0x2C
 Board: 4
-Roll: 6
+Roll: 4
 Star: 2
+Item: -1, -1, -1
 
 //board indexes:
 chilly waters = 0

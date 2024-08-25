@@ -11,7 +11,6 @@
 
 extern DecisionTreeNonLeafNode ChillyWatersJunction0Nodes[3];
 
-int aiMain(DecisionTreeNonLeafNode* node, s32 nodeCount);
 void advanceRNGBackwards(void);
 
 BoardChainsData BoardChains[] = {
@@ -19,7 +18,8 @@ BoardChainsData BoardChains[] = {
     {DeepBlooperSeaChains, ARRAY_COUNT(DeepBlooperSeaChains)},
     {SpinyDesertChains, ARRAY_COUNT(SpinyDesertChains)},
     {WoodyWoodsChains, ARRAY_COUNT(WoodyWoodsChains)},
-    {CreepyCavernChains, ARRAY_COUNT(CreepyCavernChains)}
+    {CreepyCavernChains, ARRAY_COUNT(CreepyCavernChains)},
+    {WaluigisIslandChains, ARRAY_COUNT(WaluigisIslandChains)}
 };
 
 u32 GetChainAndSpaceFromAbsSpace(s32 space) {
@@ -42,7 +42,7 @@ u32 GetChainAndSpaceFromAbsSpace(s32 space) {
 s32 SetNextSpace(void* funcData) {
     s16* spaces = funcData;
 
-    SetPlayerNextChainAndSpaceFromAbsSpace(spaces[0], SET_NEXT);
+    SetPlayerNextChainAndSpaceFromAbsSpace(spaces[0], SET_NEXT, 0);
     return NORMAL_RETURN;
 }
 
@@ -69,7 +69,7 @@ s32 JunctionDecision(void* junctionData) {
             ADV_SEED(cur_rng_seed);
         }
 
-        SetPlayerNextChainAndSpaceFromAbsSpace(cw_spaces[0], SET_NEXT);
+        SetPlayerNextChainAndSpaceFromAbsSpace(cw_spaces[0], SET_NEXT, 0);
         break;
     case DEEP_BLOOPER_SEA:
         DoubleJunction* dbs_node = junctionData;
@@ -86,7 +86,7 @@ s32 JunctionDecision(void* junctionData) {
             ADV_SEED(cur_rng_seed);
         }
 
-        SetPlayerNextChainAndSpaceFromAbsSpace(dbs_spaces[1], SET_NEXT);
+        SetPlayerNextChainAndSpaceFromAbsSpace(dbs_spaces[1], SET_NEXT, 0);
         break;
     case SPINY_DESERT:
         break;
@@ -104,7 +104,7 @@ s32 JunctionDecision(void* junctionData) {
             ADV_SEED(cur_rng_seed);
         }
 
-        SetPlayerNextChainAndSpaceFromAbsSpace(ww_spaces[1], SET_NEXT);
+        SetPlayerNextChainAndSpaceFromAbsSpace(ww_spaces[1], SET_NEXT, 0);
         break;
     case CREEPY_CAVERN:
         DoubleJunction* cc_node = junctionData;
@@ -121,7 +121,7 @@ s32 JunctionDecision(void* junctionData) {
             ADV_SEED(cur_rng_seed);
         }
 
-        SetPlayerNextChainAndSpaceFromAbsSpace(cc_spaces[0], SET_NEXT);
+        SetPlayerNextChainAndSpaceFromAbsSpace(cc_spaces[0], SET_NEXT, 0);
         break;
     case WALUIGIS_ISLAND:
         break;
@@ -136,5 +136,5 @@ SpaceData* spacesForBoards[] = {
     spiny_desert_spaces,
     woody_woods_spaces,
     creepy_cavern_spaces,
-    // waluigis_island_spaces
+    waluigis_island_spaces
 };

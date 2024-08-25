@@ -162,6 +162,23 @@ s16 SpinyDesertSpaces_0C[] = {
 s16 SpinyDesertSpaces_0D[] = {
 };
 
+SpaceChain SpinyDesertChains[] = {
+    {ARRAY_COUNT(SpinyDesertSpaces_00), SpinyDesertSpaces_00},
+    {ARRAY_COUNT(SpinyDesertSpaces_01), SpinyDesertSpaces_01},
+    {ARRAY_COUNT(SpinyDesertSpaces_02), SpinyDesertSpaces_02},
+    {ARRAY_COUNT(SpinyDesertSpaces_03), SpinyDesertSpaces_03},
+    {ARRAY_COUNT(SpinyDesertSpaces_04), SpinyDesertSpaces_04},
+    {ARRAY_COUNT(SpinyDesertSpaces_05), SpinyDesertSpaces_05},
+    {ARRAY_COUNT(SpinyDesertSpaces_06), SpinyDesertSpaces_06},
+    {ARRAY_COUNT(SpinyDesertSpaces_07), SpinyDesertSpaces_07},
+    {ARRAY_COUNT(SpinyDesertSpaces_08), SpinyDesertSpaces_08},
+    {ARRAY_COUNT(SpinyDesertSpaces_09), SpinyDesertSpaces_09},
+    {ARRAY_COUNT(SpinyDesertSpaces_0A), SpinyDesertSpaces_0A},
+    {ARRAY_COUNT(SpinyDesertSpaces_0B), SpinyDesertSpaces_0B},
+    {ARRAY_COUNT(SpinyDesertSpaces_0C), SpinyDesertSpaces_0C},
+    {ARRAY_COUNT(SpinyDesertSpaces_0D), SpinyDesertSpaces_0D},
+};
+
 SpaceData spiny_desert_spaces[] = {
 {0x01, 0x01, 0x0000, 0x00000000,  { 195.0000f, 0.0000f, 208.1695f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000 },
 {0x01, 0x01, 0x0000, 0x01000203,  { -28.8755f, 0.0000f, 94.4260f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000 },
@@ -306,23 +323,6 @@ SpaceData spiny_desert_spaces[] = {
 {0x01, 0x03, 0x0000, 0xF0000000,  { 195.0000f, 0.0000f, -230.0000f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000 },
 {0x01, 0x03, 0x0000, 0x0000FFF0,  { 225.0000f, 0.0000f, -180.0000f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000 },
 {0x01, 0x03, 0x0000, 0x00000000,  { 225.0000f, 0.0000f, -135.0000f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000 },
-};
-
-SpaceChain SpinyDesertChains[] = {
-    {ARRAY_COUNT(SpinyDesertSpaces_00), SpinyDesertSpaces_00},
-    {ARRAY_COUNT(SpinyDesertSpaces_01), SpinyDesertSpaces_01},
-    {ARRAY_COUNT(SpinyDesertSpaces_02), SpinyDesertSpaces_02},
-    {ARRAY_COUNT(SpinyDesertSpaces_03), SpinyDesertSpaces_03},
-    {ARRAY_COUNT(SpinyDesertSpaces_04), SpinyDesertSpaces_04},
-    {ARRAY_COUNT(SpinyDesertSpaces_05), SpinyDesertSpaces_05},
-    {ARRAY_COUNT(SpinyDesertSpaces_06), SpinyDesertSpaces_06},
-    {ARRAY_COUNT(SpinyDesertSpaces_07), SpinyDesertSpaces_07},
-    {ARRAY_COUNT(SpinyDesertSpaces_08), SpinyDesertSpaces_08},
-    {ARRAY_COUNT(SpinyDesertSpaces_09), SpinyDesertSpaces_09},
-    {ARRAY_COUNT(SpinyDesertSpaces_0A), SpinyDesertSpaces_0A},
-    {ARRAY_COUNT(SpinyDesertSpaces_0B), SpinyDesertSpaces_0B},
-    {ARRAY_COUNT(SpinyDesertSpaces_0C), SpinyDesertSpaces_0C},
-    {ARRAY_COUNT(SpinyDesertSpaces_0D), SpinyDesertSpaces_0D},
 };
 
 //TODO: get node data (has extra logic such as item checks)

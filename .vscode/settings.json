@@ -2,6 +2,8 @@
     "files.associations": {
         "stdlib.h": "c",
         "mp3.h": "c",
-        "ansi_colors.h": "c"
+        "ansi_colors.h": "c",
+        "util.h": "c",
+        "stdint.h": "c"
     }
 }

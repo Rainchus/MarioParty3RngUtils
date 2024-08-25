@@ -1,7 +1,7 @@
 #include "mp3.h"
 #include <stdio.h>
 
-s16 func_800EB5DC_FF1FC(s32 arg0, u8 arg1, s32 numOfBoardSpaces, s32 boardIndex);
+s16 func_800EB5DC_FF1FC(s32 arg0, u8 arg1, s32 numOfBoardSpaces);
 
 s16 D_800D03FC = 0; //total coin blocks placed
 s16 D_800CE208 = 0; //total star blocks placed
@@ -34,12 +34,19 @@ s16 CreepyCavernStarSpaces[] = {
     0x000B, 0x001F, 0x0028, 0x0013, 0x0048, 0x005C, 0x0056, 0x0031
 };
 
+s16 WaluigisIslandStarSpaces[] = {
+    0x0016, 0x0009, 0x0013, 0x0027, 0x002F, 0x004E, 0x0045, 0x0055,
+    0x0029, 0x002A, 0x002B, 0x002D, 0x002E, 0x0024, 0x0030, 0x0031,
+    0x0032, 0x0020, 0x0023, 0x0025
+};
+
 s16* StarSpaceArray[] = {
     ChillyWatersStarSpaces,
     DeepBlooperSeaStarSpaces,
     SpinyDesertStarSpaces,
     WoodyWoodsStarSpaces,
-    CreepyCavernStarSpaces
+    CreepyCavernStarSpaces,
+    WaluigisIslandStarSpaces
 };
 
 //i think this is only 8 in size, made it 16 for safety
@@ -82,36 +89,36 @@ u8 D_80101468_115088[] = { //data for chilly waters (all boards?)
     0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01
 };
 
-s16 func_800EBCD4_FF8F4(u8 arg0, s32 numOfBoardSpaces, s32 boardIndex) {
-    return func_800EB5DC_FF1FC(2, arg0, numOfBoardSpaces, boardIndex);
+s16 func_800EBCD4_FF8F4(u8 arg0, s32 numOfBoardSpaces) {
+    return func_800EB5DC_FF1FC(2, arg0, numOfBoardSpaces);
 }
 
 //func_800EB160_FED80
-SpaceData* GetSpaceData(s16 arg0, s32 boardIndex) {
-    SpaceData* boardSpaces = spacesForBoards[boardIndex];
+SpaceData* GetSpaceData(s16 arg0) {
+    SpaceData* boardSpaces = spacesForBoards[gGameStatus.boardIndex];
     return &boardSpaces[arg0];
 }
 
-void SetStarSpace(s32 starSpaceIndex, s32 boardIndex) {
-    s16 starSpaceID = StarSpaceArray[boardIndex][starSpaceIndex];
-    GetSpaceData(starSpaceID, boardIndex)->space_type = SPACE_STAR;
+void SetStarSpace(s32 starSpaceIndex) {
+    s16 starSpaceID = StarSpaceArray[gGameStatus.boardIndex][starSpaceIndex];
+    GetSpaceData(starSpaceID)->space_type = SPACE_STAR;
 }
 
-void ResetStarSpaces(s32 boardIndex) {
+void ResetStarSpaces(void) {
     for (int i = 0; i < 8; i++) {
-        s16 starSpaceID = StarSpaceArray[boardIndex][i];
-        GetSpaceData(starSpaceID, boardIndex)->space_type = SPACE_BLUE;
+        s16 starSpaceID = StarSpaceArray[gGameStatus.boardIndex][i];
+        GetSpaceData(starSpaceID)->space_type = SPACE_BLUE;
     }
 }
 
-s16 func_800EB5DC_FF1FC(s32 arg0, u8 arg1, s32 numOfBoardSpaces, s32 boardIndex) {
+s16 func_800EB5DC_FF1FC(s32 arg0, u8 arg1, s32 numOfBoardSpaces) {
     u8 var_s1;
     SpaceData* temp_a1;
     s32 i, j;
     var_s1 = 0;
 
     for (i = 0; i < numOfBoardSpaces; i++) {
-        temp_a1 = GetSpaceData(i, boardIndex);
+        temp_a1 = GetSpaceData(i);
         if (D_80101468_115088[temp_a1->space_type & 0xF] & arg0){
             var_s1++;
         }
@@ -125,9 +132,9 @@ s16 func_800EB5DC_FF1FC(s32 arg0, u8 arg1, s32 numOfBoardSpaces, s32 boardIndex)
     var_s1 = func_800EEF80_102BA0(var_s1);
 
     for (i = 0;; i = (++i < numOfBoardSpaces) ? i : 0) {
-        temp_a1 = GetSpaceData(i, boardIndex);
+        temp_a1 = GetSpaceData(i);
         for (j = 0; j < D_801054F8; j++) {
-            if (StarSpaceArray[boardIndex][j] == i) {
+            if (StarSpaceArray[gGameStatus.boardIndex][j] == i) {
                 break;
             }
         }
@@ -161,21 +168,21 @@ s16 func_800EB5DC_FF1FC(s32 arg0, u8 arg1, s32 numOfBoardSpaces, s32 boardIndex)
 }
 
 //func_800FC594_1101B4
-void PlaceHiddenBlocksMain(Blocks* blocks, s32 numOfSpaces, s32 boardIndex) {
+void PlaceHiddenBlocksMain(Blocks* blocks, s32 numOfSpaces) {
     D_800D03FC = 0;
     D_800CE208 = 0;
     D_800CDD68 = 0;
     if (func_80035F98_36B98(0xF) != 0) {
         while (blocks->coinBlockSpaceIndex == -1 || blocks->coinBlockSpaceIndex == blocks->starBlockSpaceIndex || blocks->coinBlockSpaceIndex == blocks->itemBlockSpaceIndex) {
-            blocks->coinBlockSpaceIndex = func_800EBCD4_FF8F4(D_800D03FC, numOfSpaces, boardIndex);
+            blocks->coinBlockSpaceIndex = func_800EBCD4_FF8F4(D_800D03FC, numOfSpaces);
             D_800D03FC += 1;
         }
         while (blocks->starBlockSpaceIndex == -1 || blocks->coinBlockSpaceIndex == blocks->starBlockSpaceIndex || blocks->itemBlockSpaceIndex == blocks->starBlockSpaceIndex) {
-            blocks->starBlockSpaceIndex = func_800EBCD4_FF8F4(D_800CE208, numOfSpaces, boardIndex);
+            blocks->starBlockSpaceIndex = func_800EBCD4_FF8F4(D_800CE208, numOfSpaces);
             D_800CE208 += 1;
         }
         while (blocks->itemBlockSpaceIndex == -1 || blocks->coinBlockSpaceIndex == blocks->itemBlockSpaceIndex || blocks->starBlockSpaceIndex == blocks->itemBlockSpaceIndex) {
-            blocks->itemBlockSpaceIndex = func_800EBCD4_FF8F4(D_800CDD68, numOfSpaces, boardIndex);
+            blocks->itemBlockSpaceIndex = func_800EBCD4_FF8F4(D_800CDD68, numOfSpaces);
             D_800CDD68 += 1;
         }
     }

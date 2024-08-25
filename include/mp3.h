@@ -32,8 +32,25 @@ typedef s32 func_ptr(void);
 #define BAD_JUNCTION_RESULT -2
 
 enum Items {
-    MUSHROOM = 0,
-    SKELETON_KEY = 1,
+    ITEM_MUSHROOM = 0,
+    ITEM_SKELETON_KEY = 1,
+    ITEM_POISON_MUSHROOM = 2,
+    ITEM_REVERSE_MUSHROOM = 3,
+    ITEM_CELLULAR_SHOPPER = 4,
+    ITEM_WARP_BLOCK = 5,
+    ITEM_PLUNDER_CHEST = 6,
+    ITEM_BOWSER_PHONE = 7,
+    ITEM_DUELING_GLOVE = 8,
+    ITEM_LUCKY_LAMP = 9,
+    ITEM_GOLDEN_MUSHROOM = 10,
+    ITEM_BOO_BELL = 11,
+    ITEM_BOO_REPELLANT = 12,
+    ITEM_BOWSER_SUIT = 13,
+    ITEM_MAGIC_LAMP = 14,
+    ITEM_KOOPA_KARD = 15,
+    ITEM_BARTER_BOX = 16,
+    ITEM_LUCKY_CHARM = 17,
+    ITEM_WACKY_WATCH = 18,
 };
 
 enum {
@@ -73,6 +90,11 @@ typedef struct SpaceChain {
     s16* spaceChainArray;
 } SpaceChain;
 
+typedef struct Vec2f {
+    f32 x;
+    f32 y;
+} Vec2f;
+
 typedef struct Vec3f {
     f32 x;
     f32 y;
@@ -99,7 +121,7 @@ typedef struct Blocks {
 } Blocks;
 
 typedef struct DecisionTreeNonLeafNode {
-    u8 type;
+    u32 type;
     union {
         s32 (*func) ();
         u32 data;
@@ -216,18 +238,18 @@ u8 RollDice(void);
 u8 rollDice2(void);
 s32 func_800EEF80_102BA0(f32 arg0);
 u32 MeasureRngCalls(u32 seedStart, u32 seedEnd);
-SpaceData* GetSpaceData(s16 arg0, s32 boardIndex);
-void PlaceHiddenBlocksMain(Blocks* blocks, s32 numOfSpaces, s32 boardIndex);
-s16 func_800EBCD4_FF8F4(u8 arg0, s32 numOfBoardSpaces, s32 boardIndex);
+SpaceData* GetSpaceData(s16 arg0);
+void PlaceHiddenBlocksMain(Blocks* blocks, s32 numOfSpaces);
+s16 func_800EBCD4_FF8F4(u8 arg0, s32 numOfBoardSpaces);
 s32 IsFlagSet(s32 input);
 void hidden_block_gen_main(void);
 void CPUGetWatchGeneric(s32 rollValue, u32 numOfJumps);
+int aiMain(DecisionTreeNonLeafNode* node, s32 nodeCount);
 
 extern Player gPlayers[4];
 extern s16 D_80102BC2;
 extern s16 D_800ED154[];
 extern s32 D_800F3FF0;
-extern s16 D_80100D50_114970[8];
 extern u32 D_800D41C0; //spaces left to move
 extern SpaceData* spacesForBoards[];
 extern u32 cur_rng_seed;
