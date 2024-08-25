@@ -333,6 +333,8 @@ s16 RunDecisionTree(DecisionTreeNonLeafNode* currentNode, s32 nodeTotal) {
         }
         //printf("var_v0_7 is %08X\n", var_v0_7);
         //printf("Seed before Junction is %08X\n", cur_rng_seed);
+        //printf("NodeDepth of %d\n", nodeDepth);
+
         int rngResult = RNGPercentChance(var_v0_7);
         
         if (rngResult != 0) {

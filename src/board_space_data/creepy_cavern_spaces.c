@@ -381,7 +381,7 @@ s32 func_80108798(void) {
     return var_a1;
 }
 
-//TODO: fix the node data
+//TODO: when read, node data escapes array boundaries somewhere in these nodes
 
 DecisionTreeNonLeafNode CreepyCavernJunction5Nodes[] = {
     {
@@ -418,13 +418,13 @@ DecisionTreeNonLeafNode CreepyCavernJunction3Nodes[] = {
         .type = 0x03,
         .node_data1.data = 0x00000001,
         .node_data2.data = 0x1C96A33C,
-        .isPointer = 1,
+        .isPointer = 0,
     },
     {
         .type = 0x00,
         .node_data1.data = 0x00000000,
         .node_data2.data = 0x0C96A33C,
-        .isPointer = 1,
+        .isPointer = 0,
     },
 };
 
@@ -511,7 +511,7 @@ DecisionTreeNonLeafNode CreepyCavernJunction0Nodes[] = {
         .type = 0x02,
         .node_data1.data = 0x0000000C,
         .node_data2.node_data = CreepyCavernJunction3Nodes, //8011D38C
-        .isPointer = 0,
+        .isPointer = 1,
     },
 };
 

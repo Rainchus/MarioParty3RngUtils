@@ -45,7 +45,7 @@ void ResetStarSpaces(void);
 void SetStarSpace(s32 starSpaceIndex);
 void SetStarSpawnData(s32 starSpawnIndex);
 extern DecisionTreeNonLeafNode ShopDecisionNode[];
-s32 rng_advancements_between_spaces[] = {6, 11, 16};
+s32 rng_advancements_walking_between_spaces[] = {6, 11, 16};
 
 //D_80105210
 u16 boardSpaceCounts[] = {
@@ -156,7 +156,7 @@ s32 CPUWalkSpaces(s32 diceRoll, s32 walkSpeed, s32 messageSpeed) {
         player->cur_space_index = player->next_space_index;
 
         //advance rng seed by +1 each frame of walking to the space
-        for (int i = 0; i < rng_advancements_between_spaces[walkSpeed]; i++) {
+        for (int i = 0; i < rng_advancements_walking_between_spaces[walkSpeed]; i++) {
             ADV_SEED(cur_rng_seed);
         }
 
@@ -382,7 +382,7 @@ int main(int argc, char* argv[]) {
 
     printf("\n");
 
-    //shouldn't need to set these next spaces, but current spaces are used for if the player should jump to the net space or not
+    //shouldn't need to set other players next spaces, but current spaces are used for if the player should jump to the net space or not
     SetPlayerNextChainAndSpaceFromAbsSpace(p2Space, SET_CURRENT, 1);
     SetPlayerNextChainAndSpaceFromAbsSpace(p3Space, SET_CURRENT, 2);
     SetPlayerNextChainAndSpaceFromAbsSpace(p4Space, SET_CURRENT, 3);
