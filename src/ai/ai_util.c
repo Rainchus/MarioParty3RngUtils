@@ -109,6 +109,9 @@ s16 RunDecisionTree(DecisionTreeNonLeafNode* currentNode, s32 nodeTotal) {
             return -1;
         }
         switch (var_s1->type) {                              /* switch 1 */
+        case -1:
+            printf(ANSI_RED "Error: reached junction node type of -1 which means we hit an end when unexpected\n" ANSI_RESET);
+            return -1;
         case 1:                                         /* switch 1 */
             if (PlayerHasCoins(-1, var_s1->node_data1.data) != 0) {
                 break;

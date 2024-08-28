@@ -54,9 +54,9 @@ GameStatus gGameStatus = {
     .TotalTurns = 20,
     .CurrentTurn = 1,
     .curGameLength = 0, //20 turns
-    .curStarSpawnIndex = 0, //TODO, verify this
+    .curStarSpawnIndex = 0,
     //does the game randomize these on board load and then randomly pick from one?
-    .starSpawnIndicies = {1, 3, 2, 0, 4, 6, 5, 7}, //TODO, verify this
+    .starSpawnIndicies = {1, 3, 2, 0, 4, 6, 5, 7},
     .unkE = 0,
     .curPlayerIndex = 0,
     .unkData.unkArray_s16 = {0},
@@ -95,6 +95,12 @@ Player* GetPlayerStruct(s32 index) {
     return &gPlayers[index];
 }
 
+void AdvanceRng(s32 numOfAdvances) {
+    for (int i = 0; i < numOfAdvances; i++) {
+        ADV_SEED(cur_rng_seed);
+    }
+}
+
 u8 rand8(void) {
     cur_rng_seed = cur_rng_seed * 0x41C64E6D + 0x3039;
     return (cur_rng_seed + 1) >> 16;
@@ -127,13 +133,6 @@ s32 func_800EEF80_102BA0(f32 arg0) { //800EFE20 in duel mode
 u8 RollDice(void) { //func_800DBC2C in board play, func_800DB148 in duel mode
     u8 randByte = rand8();
     return ((randByte % 10) + 1);
-}
-
-//8 rng advancements to face fowards
-void PlayerFaceForward(void) {
-    for (int i = 0; i < 8; i++) {
-        ADV_SEED(cur_rng_seed);
-    }    
 }
 
 u32 MeasureRngCalls(u32 seedStart, u32 seedEnd) {
@@ -246,9 +245,7 @@ s32 HandleLogicFromItemSpace(s32 messageSpeed, s16* data) {
 
 void DoBankAdvancements(s32 messageSpeed) {
     //player face bank when passing it
-    for (int i = 0; i < 8; i++) {
-        ADV_SEED(cur_rng_seed);
-    }
+    AdvanceRng(FACE_SPACE_TIME);
 
     //time at bank
     for (int i = 0; i < CpuBankRngAdvancements[messageSpeed]; i++) {

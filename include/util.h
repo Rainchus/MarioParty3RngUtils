@@ -3,6 +3,9 @@
 
 #include "mp3.h"
 
+#define ROLL_DICE_BLOCK_TIME 23
+#define FACE_SPACE_TIME 8
+
 typedef struct DoubleJunction {
     s16 spaceABS[2];
     DecisionTreeNonLeafNode* junctionNodeData;
@@ -37,8 +40,9 @@ extern BoardChainsData BoardChains[];
 extern s32 rng_advancements_between_spaces[3];
 
 s32 SetNextSpace(void* funcData);
-s32 JunctionDecision(void* junctionData);
+s32 DoubleJunctionDecision(void* junctionData);
 void SetPlayerNextChainAndSpaceFromAbsSpace(s32 absSpace, s32 mode, s32 playerIndex);
 s32 func_800F9A68_10D688(s32 arg0);
+void AdvanceRng(s32);
 
 #endif

@@ -1,18 +1,7 @@
-StartSpace: 0x21
-NextSpace: 0x2C
-EndSpace: 0x58
-P2 Space: 0x21
-P3 Space: 0x21
-P4 Space: 0x21
-Board: 4
-Roll: 5
-Star: 2
-Item: -1, -1, -1
-
-//board indexes:
-//chilly waters = 0
-//deep blooper sea = 1
-//spiny desert = 2
-//woody woods = 3
-//creepy cavern = 4
-//waluigi's island = 5
+Board: 0
+StartSpace: 0x45
+EndSpace: 0x55
+Star: 0x1d
+P2 Space: 0x1f
+P3 Space: 0x22
+P4 Space: 0x24

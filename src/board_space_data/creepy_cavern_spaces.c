@@ -332,7 +332,7 @@ SpaceData creepy_cavern_spaces[] = {
 /* 0x080 */ {0x01, 0x03, 0x0000, 0x08F00000,  { -147.0880f, 0.0000f, 80.0000f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000, 0x0000 },
 /* 0x081 */ {0x01, 0x03, 0x0000, 0x08F00000,  { -50.0000f, 0.0000f, -7.3215f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000, 0x0000 },
 /* 0x082 */ {0x01, 0x03, 0x0000, 0x000000F0,  { -180.0000f, 0.0000f, -147.7120f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000, 0x0000 },
-/* 0x083 */ {0x01, 0x03, 0x0000, 0x00000000,  { 55.1765f, 0.0000f, 152.8145f}, { 0.1000f, 0.1000f, 0.1000f }, JunctionDecision, &CC_Space_83 },
+/* 0x083 */ {0x01, 0x03, 0x0000, 0x00000000,  { 55.1765f, 0.0000f, 152.8145f}, { 0.1000f, 0.1000f, 0.1000f }, DoubleJunctionDecision, &CC_Space_83 },
 /* 0x084 */ {0x01, 0x0D, 0x0000, 0x00000000,  { -150.0000f, 0.0000f, -147.7120f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000, 0x0000 },
 /* 0x085 */ {0x01, 0x03, 0x0000, 0xF00F0000,  { -150.0000f, 0.0000f, -180.0000f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000, 0x0000 },
 /* 0x086 */ {0x01, 0x03, 0x0000, 0x00000000,  { -125.0000f, 0.0000f, -180.0000f}, { 0.1000f, 0.1000f, 0.1000f }, 0x00000000, 0x0000 },
@@ -396,6 +396,12 @@ DecisionTreeNonLeafNode CreepyCavernJunction5Nodes[] = {
         .node_data2.data = 0x1C96A33C,
         .isPointer = 0,
     },
+    {
+        .type = -1,
+        .node_data1.data = 0,
+        .node_data2.data = 0,
+        .isPointer = 0,
+    },
 };
 
 DecisionTreeNonLeafNode CreepyCavernJunction4Nodes[] = {
@@ -411,6 +417,12 @@ DecisionTreeNonLeafNode CreepyCavernJunction4Nodes[] = {
         .node_data2.data = 0x0C96A33C,
         .isPointer = 0,
     },
+    {
+        .type = -1,
+        .node_data1.data = 0,
+        .node_data2.data = 0,
+        .isPointer = 0,
+    },
 };
 
 DecisionTreeNonLeafNode CreepyCavernJunction3Nodes[] = {
@@ -424,6 +436,12 @@ DecisionTreeNonLeafNode CreepyCavernJunction3Nodes[] = {
         .type = 0x00,
         .node_data1.data = 0x00000000,
         .node_data2.data = 0x0C96A33C,
+        .isPointer = 0,
+    },
+    {
+        .type = -1,
+        .node_data1.data = 0,
+        .node_data2.data = 0,
         .isPointer = 0,
     },
 };
@@ -465,6 +483,12 @@ DecisionTreeNonLeafNode CreepyCavernJunction1Nodes[] = {
         .node_data2.data = 0x1C96A33C,
         .isPointer = 0,
     },
+    {
+        .type = -1,
+        .node_data1.data = 0,
+        .node_data2.data = 0,
+        .isPointer = 0,
+    },
 };
 
 DecisionTreeNonLeafNode CreepyCavernJunction2Nodes[] = {
@@ -478,6 +502,12 @@ DecisionTreeNonLeafNode CreepyCavernJunction2Nodes[] = {
         .type = 0x03,
         .node_data1.data = 0x00000001,
         .node_data2.data = 0x1C96A33C,
+        .isPointer = 0,
+    },
+    {
+        .type = -1,
+        .node_data1.data = 0,
+        .node_data2.data = 0,
         .isPointer = 0,
     },
     // {
@@ -512,6 +542,12 @@ DecisionTreeNonLeafNode CreepyCavernJunction0Nodes[] = {
         .node_data1.data = 0x0000000C,
         .node_data2.node_data = CreepyCavernJunction3Nodes, //8011D38C
         .isPointer = 1,
+    },
+    {
+        .type = -1,
+        .node_data1.data = 0,
+        .node_data2.data = 0,
+        .isPointer = 0,
     },
 };
 

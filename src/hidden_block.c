@@ -40,7 +40,7 @@ s16 WaluigisIslandStarSpaces[] = {
     0x0032, 0x0020, 0x0023, 0x0025
 };
 
-s16* StarSpaceArray[] = {
+s16* StarSpaces[] = {
     ChillyWatersStarSpaces,
     DeepBlooperSeaStarSpaces,
     SpinyDesertStarSpaces,
@@ -100,13 +100,14 @@ SpaceData* GetSpaceData(s16 arg0) {
 }
 
 void SetStarSpace(s32 starSpaceIndex) {
-    s16 starSpaceID = StarSpaceArray[gGameStatus.boardIndex][starSpaceIndex];
+    s16 starSpaceID = StarSpaces[gGameStatus.boardIndex][starSpaceIndex];
     GetSpaceData(starSpaceID)->space_type = SPACE_STAR;
 }
 
 void ResetStarSpaces(void) {
+    //TODO: this only clears 8 spaces but waluigi's island has 20 in array (WaluigisIslandStarSpaces) ?
     for (int i = 0; i < 8; i++) {
-        s16 starSpaceID = StarSpaceArray[gGameStatus.boardIndex][i];
+        s16 starSpaceID = StarSpaces[gGameStatus.boardIndex][i];
         GetSpaceData(starSpaceID)->space_type = SPACE_BLUE;
     }
 }
@@ -134,7 +135,7 @@ s16 func_800EB5DC_FF1FC(s32 arg0, u8 arg1, s32 numOfBoardSpaces) {
     for (i = 0;; i = (++i < numOfBoardSpaces) ? i : 0) {
         temp_a1 = GetSpaceData(i);
         for (j = 0; j < D_801054F8; j++) {
-            if (StarSpaceArray[gGameStatus.boardIndex][j] == i) {
+            if (StarSpaces[gGameStatus.boardIndex][j] == i) {
                 break;
             }
         }

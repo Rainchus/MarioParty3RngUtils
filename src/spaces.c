@@ -46,8 +46,14 @@ s32 SetNextSpace(void* funcData) {
     return NORMAL_RETURN;
 }
 
-s32 JunctionDecision(void* junctionData) {
+extern s32 gForceJunctionDecision;
+//
+s32 DoubleJunctionDecision(void* junctionData) {
     s32 aiDecision = 1;
+
+    if (gForceJunctionDecision != -1) {
+        return gForceJunctionDecision;
+    }
 
     //wait 5 frames after making it to junction before cpu decides where to go
     for (int i = 0; i < 5; i++) {

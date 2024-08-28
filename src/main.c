@@ -5,7 +5,6 @@
 #include "util.h"
 
 #define ERROR -1
-#define ROLL_DICE_BLOCK_TIME 23
 #define OPTION_YES 1
 #define OPTION_NO 0
 
@@ -46,6 +45,8 @@ void SetStarSpace(s32 starSpaceIndex);
 void SetStarSpawnData(s32 starSpawnIndex);
 extern DecisionTreeNonLeafNode ShopDecisionNode[];
 s32 rng_advancements_walking_between_spaces[] = {6, 11, 16};
+s32 rng_advancements_jump_extra[] = {2, 5, 15}; //extra frames that jumping to a space takes
+s32 gForceJunctionDecision = -1; //used to force junction decision (when we dont care about advancing rng)
 
 //D_80105210
 u16 boardSpaceCounts[] = {
@@ -65,9 +66,7 @@ char* speedsText[] = {
 
 void DoShop(void) {
     //turn to face shop
-    for (int i = 0; i < 8; i++) {
-        ADV_SEED(cur_rng_seed);
-    }
+    AdvanceRng(FACE_SPACE_TIME);
 
     s32 ShopHostDecision = RNGPercentChance(66);
 
@@ -128,6 +127,58 @@ void DoJumpAdvancements(s32 walkSpeed) {
     }
 }
 
+//used for finding the next space for the cpu on initial setup so the user doesn't have to enter it
+s32 CpuFindNextSpace(void) {
+    Player* player = GetPlayerStruct(-1); //get current player struct
+    s32 funcEventResult;
+    SpaceChain* curBoardChains = BoardChains[gGameStatus.boardIndex].boardChainData;
+    s32 spaceID = GetSpaceIndexFromChainAndSpace(player->cur_chain_index, player->cur_space_index);
+    SpaceData* space = &spacesForBoards[gGameStatus.boardIndex][spaceID];
+
+    //players cannot be placed on invisible spaces, throw error
+    switch (space->space_type) {
+        case SPACE_INVISIBLE: //usually a junction
+        case SPACE_SHOP:
+        case SPACE_UNK_8: //woody woods junctions?
+            return ERROR;
+    }
+
+    if (player->cur_space_index + 1 >= curBoardChains[player->cur_chain_index].amountOfSpaces) {
+        if (space->eventFunction == 0) {
+            printf(ANSI_RED "Error: End of chain reached at space %02lX with no known link to next chain\n" ANSI_RESET, spaceID);
+            return ERROR;
+        }
+        //the next chain index and space index were set by a function, use this to get the next space
+        return GetSpaceIndexFromChainAndSpace(player->next_chain_index, player->next_space_index);
+    } else {
+        //the given space wasn't the end of a chain, just do +1
+        return GetSpaceIndexFromChainAndSpace(player->cur_chain_index, player->cur_space_index + 1);
+    }
+}
+
+//similar to CpuWalkSpaces but it doesn't advance rng and it needs to check both paths from a junction for a specific space
+s32 CalculateCpuNeededRoll(void) {
+    Player* player = GetPlayerStruct(-1); //get current player struct
+    s32 funcEventResult;
+    SpaceChain* curBoardChains = BoardChains[gGameStatus.boardIndex].boardChainData;
+    s32 spaceID = GetSpaceIndexFromChainAndSpace(player->cur_chain_index, player->cur_space_index);
+    SpaceData* space = &spacesForBoards[gGameStatus.boardIndex][spaceID];
+
+    // while (1) {
+    //     if (player->cur_space_index + 1 >= curBoardChains[player->cur_chain_index].amountOfSpaces) {
+    //         if (space->eventFunction == 0) {
+    //             printf(ANSI_RED "Error: End of chain reached at space %02lX with no known link to next chain\n" ANSI_RESET, spaceID);
+    //             return ERROR;
+    //         }
+    //         //the next chain index and space index were set by a function, use this to get the next space
+    //         return GetSpaceIndexFromChainAndSpace(player->next_chain_index, player->next_space_index);
+    //     } else {
+    //         //the given space wasn't the end of a chain, just do +1
+    //         return GetSpaceIndexFromChainAndSpace(player->cur_chain_index, player->cur_space_index + 1);
+    //     }
+    // }
+}
+
 s32 CPUWalkSpaces(s32 diceRoll, s32 walkSpeed, s32 messageSpeed) {
     Player* player = GetPlayerStruct(-1); //get current player struct
     s32 spaceID;
@@ -141,14 +192,12 @@ s32 CPUWalkSpaces(s32 diceRoll, s32 walkSpeed, s32 messageSpeed) {
     }
 
     //time to roll dice and start moving
-    for (int i = 0; i < ROLL_DICE_BLOCK_TIME; i++) {
-        ADV_SEED(cur_rng_seed);
-    }
+    AdvanceRng(ROLL_DICE_BLOCK_TIME);
 
     while (diceRoll > 0) {
         //check if we should jump to the next space, and if so, add rng advancements as needed
         if (func_800F9A68_10D688(0) == 1) {
-            DoJumpAdvancements(walkSpeed);
+            AdvanceRng(rng_advancements_jump_extra[walkSpeed]);
         }
 
         //move player to next space
@@ -156,15 +205,13 @@ s32 CPUWalkSpaces(s32 diceRoll, s32 walkSpeed, s32 messageSpeed) {
         player->cur_space_index = player->next_space_index;
 
         //advance rng seed by +1 each frame of walking to the space
-        for (int i = 0; i < rng_advancements_walking_between_spaces[walkSpeed]; i++) {
-            ADV_SEED(cur_rng_seed);
-        }
+        AdvanceRng(rng_advancements_walking_between_spaces[walkSpeed]);
 
         //check if next space would be out of array bounds
         //+1 to convert index -> non index
         SpaceChain* curBoardChains = BoardChains[gGameStatus.boardIndex].boardChainData;
         if (player->cur_space_index + 1 >= curBoardChains[player->cur_chain_index].amountOfSpaces) {
-            //if it is, get function pointer for space to appropriately set the next space
+            //if it is the end of a chain, get function pointer for space to appropriately set the next space
             spaceID = GetSpaceIndexFromChainAndSpace(player->cur_chain_index, player->cur_space_index);
             SpaceData* space = &spacesForBoards[gGameStatus.boardIndex][spaceID];
 
@@ -200,11 +247,13 @@ s32 CPUWalkSpaces(s32 diceRoll, s32 walkSpeed, s32 messageSpeed) {
     }
 
     //face player foward in 8 frames
-    for (int i = 0; i < 8; i++) {
-        ADV_SEED(cur_rng_seed);
-    }
+    AdvanceRng(8);
     spacesWalked = absSpacesWalked;
     return HandleLogicFromItemSpace(messageSpeed, spacesWalked);
+}
+
+void CpuItemLogicCheck(void) {
+
 }
 
 //starts from placement of hidden blocks
@@ -225,6 +274,8 @@ void DoPlayerTurn(s32 wantedRoll, s32 iteration, s32 absSpaceStart, s32 absSpace
     for (int j = 0; j < 58; j++) {
         ADV_SEED(cur_rng_seed);
     }
+
+    CpuItemLogicCheck();
 
     // //TODO: item check here, make sure this is correctly handled
     // ADV_SEED(cur_rng_seed);
@@ -270,7 +321,77 @@ void DoPlayerTurn(s32 wantedRoll, s32 iteration, s32 absSpaceStart, s32 absSpace
     }
 }
 
-void ReadParametersFromFile(const char* filename, u32* startSpace, u32* nextSpace, u32* endSpace, u32* p2Space, u32* p3Space, u32*p4Space, u32* board, u32* roll, u32* starSpaceIndex, s32* items, s32* numItems) {
+//ReadParametersFromFile2("input.txt", &board, &startSpace, &endSpace, &starSpace, &p2Space, &p3Space, &p4Space);
+
+void ReadParametersFromFile2(const char* filename, u32* board, u32* startSpace, u32* endSpace, u32* starSpace,  u32* p2Space, u32* p3Space, u32* p4Space) {
+    FILE* file = fopen(filename, "r");
+    if (file == NULL) {
+        perror("Failed to open input file");
+        exit(EXIT_FAILURE);
+    }
+
+    char line[256];
+    char valueStr[256];
+    while (fgets(line, sizeof(line), file)) {
+        if (sscanf(line, "Board: %s", valueStr) == 1) {
+            if (strstr(valueStr, "0x") == valueStr) {
+                sscanf(valueStr, "0x%x", board);
+            } else {
+                *board = (u32)atoi(valueStr);
+            }
+        } else if (sscanf(line, "StartSpace: %s", valueStr) == 1) {
+            if (strstr(valueStr, "0x") == valueStr) {
+                sscanf(valueStr, "0x%x", startSpace);
+            } else {
+                *startSpace = (u32)atoi(valueStr);
+            }
+        } else if (sscanf(line, "EndSpace: %s", valueStr) == 1) {
+            if (strstr(valueStr, "0x") == valueStr) {
+                sscanf(valueStr, "0x%x", endSpace);
+            } else {
+                *endSpace = (u32)atoi(valueStr);
+            }
+        } else if (sscanf(line, "Star: %s", valueStr) == 1) {
+            if (strstr(valueStr, "0x") == valueStr) {
+                sscanf(valueStr, "0x%x", starSpace);
+            } else {
+                *starSpace = (u32)atoi(valueStr);
+            }
+        } else if (sscanf(line, "P2 Space: %s", valueStr) == 1) {
+            if (strstr(valueStr, "0x") == valueStr) {
+                sscanf(valueStr, "0x%x", p2Space);
+            } else {
+                *p2Space = (u32)atoi(valueStr);
+            }
+        } else if (sscanf(line, "P3 Space: %s", valueStr) == 1) {
+            if (strstr(valueStr, "0x") == valueStr) {
+                sscanf(valueStr, "0x%x", p3Space);
+            } else {
+                *p3Space = (u32)atoi(valueStr);
+            }
+        } else if (sscanf(line, "P4 Space: %s", valueStr) == 1) {
+            if (strstr(valueStr, "0x") == valueStr) {
+                sscanf(valueStr, "0x%x", p4Space);
+            } else {
+                *p4Space = (u32)atoi(valueStr);
+            }
+        }
+        // else if (sscanf(line, "Item: %[^\n]", valueStr) == 1) {
+        //     // Split the string by commas and parse each item
+        //     *numItems = 0;
+        //     char* token = strtok(valueStr, ",");
+        //     while (token != NULL && *numItems < 3) {
+        //         items[*numItems] = (s32)atoi(token);
+        //         (*numItems)++;
+        //         token = strtok(NULL, ",");
+        //     }
+        // }
+    }
+
+    fclose(file);
+}
+
+void ReadParametersFromFile(const char* filename, u32* startSpace, u32* endSpace, u32* p2Space, u32* p3Space, u32*p4Space, u32* board, u32* roll, u32* starSpaceIndex, s32* items, s32* numItems) {
     FILE* file = fopen(filename, "r");
     if (file == NULL) {
         perror("Failed to open input file");
@@ -285,12 +406,6 @@ void ReadParametersFromFile(const char* filename, u32* startSpace, u32* nextSpac
                 sscanf(valueStr, "0x%x", startSpace);
             } else {
                 *startSpace = (u32)atoi(valueStr);
-            }
-        } else if (sscanf(line, "NextSpace: %s", valueStr) == 1) {
-            if (strstr(valueStr, "0x") == valueStr) {
-                sscanf(valueStr, "0x%x", nextSpace);
-            } else {
-                *nextSpace = (u32)atoi(valueStr);
             }
         } else if (sscanf(line, "EndSpace: %s", valueStr) == 1) {
             if (strstr(valueStr, "0x") == valueStr) {
@@ -349,32 +464,68 @@ void ReadParametersFromFile(const char* filename, u32* startSpace, u32* nextSpac
     fclose(file);
 }
 
+s32 ConvertAbsSpaceToStarSpaceIndex(s32 spaceID) {
+    s16* curBoardStarSpaces = StarSpaces[gGameStatus.boardIndex];
+    s32 i = 0;
+    for (; i < 8; i++) { //TODO: waluigi's island has more than 8 star spaces...what do
+        if (curBoardStarSpaces[i] == spaceID) {
+            return i;
+        } 
+    }
+    return -1; //didnt find star space in current board's star space array
+    
+}
+
 int main(int argc, char* argv[]) {
     u32 prevSeed = cur_rng_seed;
-    u32 startSpace, nextSpace, endSpace, board, roll, starSpaceIndex, p2Space, p3Space, p4Space = -1;
+    u32 startSpace, endSpace, board, roll, starSpace, p2Space, p3Space, p4Space = -1;
     s32 items[3];
     s32 numItems = 0;
 
-    ReadParametersFromFile("input.txt", &startSpace, &nextSpace, &endSpace, &p2Space, &p3Space, &p4Space, &board, &roll, &starSpaceIndex, items, &numItems);
+    ReadParametersFromFile2("input.txt", &board, &startSpace, &endSpace, &starSpace, &p2Space, &p3Space, &p4Space);
+
+    //ReadParametersFromFile("input.txt", &startSpace, &endSpace, &p2Space, &p3Space, &p4Space, &board, &roll, &starSpace, items, &numItems);
     gGameStatus.boardIndex = board;
+
+    SetPlayerNextChainAndSpaceFromAbsSpace(startSpace, SET_CURRENT, 0);
+    s32 nextSpaceResult = CpuFindNextSpace();
+
+    if (nextSpaceResult == ERROR) {
+        printf(ANSI_RED "Error: Invalid next space index\n" ANSI_RESET);
+        return EXIT_FAILURE;        
+    }
+
     printf(
+        "Board: 0x%02X\n"
         "StartSpace: 0x%02X\n"
-        "NextSpace: 0x%02X\n"
         "EndSpace: 0x%02X\n"
+        "Star: 0x%02X\n"
         "P2 Space: 0x%02X\n"
         "P3 Space: 0x%02X\n"
-        "P4 Space: 0x%02X\n"
-        "Board: %d\n"
-        "Roll: %d\n"
-        "Star: %d\n",
-        startSpace, nextSpace, endSpace,  p2Space, p3Space, p4Space, board, roll, starSpaceIndex
-        );
+        "P4 Space: 0x%02X\n",
+        board, startSpace, endSpace, starSpace, p2Space, p3Space, p4Space 
+    );
+
+    // printf(
+    //     "StartSpace: 0x%02X\n"
+    //     "NextSpace: 0x%02X\n"
+    //     "EndSpace: 0x%02X\n"
+    //     "P2 Space: 0x%02X\n"
+    //     "P3 Space: 0x%02X\n"
+    //     "P4 Space: 0x%02X\n"
+    //     "Board: %d\n"
+    //     "Roll: %d\n"
+    //     "Star: %d\n",
+    //     startSpace, nextSpaceResult, endSpace,  p2Space, p3Space, p4Space, board, roll, starSpaceIndex
+    //     );
+
     printf("Items: ");
+
     for (int i = 0; i < numItems; i++) {
-        gPlayers[0].items[i] = items[i];
+        gPlayers[0].items[i] = items[i]; //copy items to p1
         //dont print ", "after last entry
         if (i+1 == numItems) {
-            printf("%s", ShopOptions[items[i] + 1]);
+            printf("%s\n", ShopOptions[items[i] + 1]);
         } else {
             printf("%s, ", ShopOptions[items[i] + 1]);
         }
@@ -387,6 +538,9 @@ int main(int argc, char* argv[]) {
     SetPlayerNextChainAndSpaceFromAbsSpace(p3Space, SET_CURRENT, 2);
     SetPlayerNextChainAndSpaceFromAbsSpace(p4Space, SET_CURRENT, 3);
 
+    s32 starSpaceIndex = ConvertAbsSpaceToStarSpaceIndex(starSpace);
+    printf("Star: %02X", starSpaceIndex);
+
     if (starSpaceIndex >= 8) {
         printf(ANSI_RED "Error: Invalid star space index of %d passed. max is 7\n" ANSI_RESET, starSpaceIndex);
         return EXIT_FAILURE;
@@ -397,12 +551,10 @@ int main(int argc, char* argv[]) {
     for (s32 i = 0; i < 3000; i++) {
         ResetStarSpaces();
         SetStarSpace(starSpaceIndex);
-        DoPlayerTurn(roll, i, startSpace, nextSpace, endSpace);
+        DoPlayerTurn(roll, i, startSpace, nextSpaceResult, endSpace);
         ADV_SEED(prevSeed);
         cur_rng_seed = prevSeed;
     }
 
     return EXIT_SUCCESS;
 }
-//after dice roll - seed A17E7C29
-//at shop toad/baby bowser decision - seed 61BA63D4

@@ -254,5 +254,6 @@ extern u32 D_800D41C0; //spaces left to move
 extern SpaceData* spacesForBoards[];
 extern u32 cur_rng_seed;
 extern u32 rng_seeds_by_index[];
+extern s16* StarSpaces[6];
 
 #endif
