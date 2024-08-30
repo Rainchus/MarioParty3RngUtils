@@ -1,7 +1,10 @@
-Board: 0
-StartSpace: 0x45
-EndSpace: 0x55
-Star: 0x1d
-P2 Space: 0x1f
-P3 Space: 0x22
-P4 Space: 0x24
+Board: 1
+Star: 0x1e
+StartSpace: 0x17
+NextSpace: 0x18
+EndSpace: 0x1c
+Roll: 5
+P2 Space: 0x42
+P3 Space: 0x42
+P4 Space: 0x42
+Items: -1, -1, -1

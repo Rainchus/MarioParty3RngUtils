@@ -32,6 +32,7 @@ extern DecisionTreeNonLeafNode WoodyWoodsJunction0Nodes[4];
 extern s16 CW_Space_34[];
 extern s16 DBS_Space_25[];
 extern s16 WI_Space_2C[];
+extern s16 WW_Space_01[];
 extern DoubleJunction CW_Space_6C;
 extern DoubleJunction DBS_Space_68;
 extern DoubleJunction WW_Space_67;

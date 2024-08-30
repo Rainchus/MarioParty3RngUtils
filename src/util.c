@@ -19,6 +19,7 @@
 #define BOTTOM_OPTION 2
 
 u32 cur_rng_seed = 0x0000D9ED; //initial starting seed D_80097650
+//on jp cur_rng_seed is address D_80092640 (0x5010 less on jp)
 
 Vec2f D_80101D5C_11597C[] = {
     {0.0f, 0.0f},
@@ -118,7 +119,7 @@ s16 RNGPercentChance(s8 percentChance) {
     return result;
 }
 
-s32 func_800EEF80_102BA0(f32 arg0) { //800EFE20 in duel mode
+s32 func_800EEF80_102BA0(f32 arg0) { //800EFE20 in duel mode, //800E3930 in jp board mode
     // rand8 returns an unsigned byte
     u8 randomByte1 = rand8();
     u8 randomByte2 = rand8();
@@ -130,7 +131,7 @@ s32 func_800EEF80_102BA0(f32 arg0) { //800EFE20 in duel mode
     return scaledRandom;
 }
 
-u8 RollDice(void) { //func_800DBC2C in board play, func_800DB148 in duel mode
+u8 RollDice(void) { //func_800DBC2C in board play, func_800DB148 in duel mode, func_800D063C in jp board mode
     u8 randByte = rand8();
     return ((randByte % 10) + 1);
 }
@@ -170,11 +171,10 @@ void SetPlayerNextChainAndSpaceFromAbsSpace(s32 absSpace, s32 mode, s32 playerIn
         break;
     }
 }
-
+extern u32 debug_seed_item_space;
 //handles all rng related things starting at decision of item space event
-s32 HandleLogicFromItemSpace(s32 messageSpeed, s16* data) {
-    u32 rngBeforeItemSpaceResult = cur_rng_seed;
-    
+s32 HandleLogicFromItemSpace(s32 messageSpeed) {
+    debug_seed_item_space = cur_rng_seed;
     s32 itemSpaceOutcome = func_800EEF80_102BA0(5.0f);
     if (itemSpaceOutcome != TOAD_QUESTION) {
         return 0;

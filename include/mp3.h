@@ -224,6 +224,19 @@ typedef struct Player {
     // s8 pad2[3];
 } Player; // sizeof == 56 | 0x38
 
+//used for save data
+typedef struct PackedPlayer {
+    u8 cur_chain_index;
+    u8 cur_space_index;
+
+    u8 next_chain_index;
+    u8 next_space_index;
+
+    //we dont get the reverse chain info, so using a reverse mushroom the first turn after loading in
+    //from a reset will yield unpredictable results
+
+} PackedPlayer;
+
 s16 RNGPercentChance(s8);
 s16 func_800ECEE4_100B04(void);
 s32 CalcPlayerPlacement(s32);
@@ -242,11 +255,11 @@ SpaceData* GetSpaceData(s16 arg0);
 void PlaceHiddenBlocksMain(Blocks* blocks, s32 numOfSpaces);
 s16 func_800EBCD4_FF8F4(u8 arg0, s32 numOfBoardSpaces);
 s32 IsFlagSet(s32 input);
-void hidden_block_gen_main(void);
+void hidden_block_gen_main(int starSpace, int curSpaceID, int nextSpaceID, int endSpaceID, int board, int wantedRoll);
 void CPUGetWatchGeneric(s32 rollValue, u32 numOfJumps);
 int aiMain(DecisionTreeNonLeafNode* node, s32 nodeCount);
 
-extern Player gPlayers[4];
+extern Player gPlayers[4]; //0x800D1108 on US, 0x800C68E0 on JP
 extern s16 D_80102BC2;
 extern s16 D_800ED154[];
 extern s32 D_800F3FF0;
@@ -254,6 +267,6 @@ extern u32 D_800D41C0; //spaces left to move
 extern SpaceData* spacesForBoards[];
 extern u32 cur_rng_seed;
 extern u32 rng_seeds_by_index[];
-extern s16* StarSpaces[6];
+extern s16* HiddenBlockSpacesBlacklist[6];
 
 #endif

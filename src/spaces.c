@@ -9,6 +9,8 @@
 #define NO_DIRECTION_SWAP 0
 #define DIRECTION_SWAP 1
 
+extern u32 debug_seed_before_junction;
+
 extern DecisionTreeNonLeafNode ChillyWatersJunction0Nodes[3];
 
 void advanceRNGBackwards(void);
@@ -47,9 +49,14 @@ s32 SetNextSpace(void* funcData) {
 }
 
 extern s32 gForceJunctionDecision;
-//
+//TODO: this should not have hardcoded directions in it.
+//Instead, we should walk the spaces and then check -
+//if the space we stop on equals the intended end space
+//TODO: this shouldn't even be split into board specific decisions
 s32 DoubleJunctionDecision(void* junctionData) {
     s32 aiDecision = 1;
+
+    //printf("Seed at junction: %08X\n", cur_rng_seed);
 
     if (gForceJunctionDecision != -1) {
         return gForceJunctionDecision;
@@ -60,6 +67,8 @@ s32 DoubleJunctionDecision(void* junctionData) {
         ADV_SEED(cur_rng_seed);
     }
 
+    debug_seed_before_junction = cur_rng_seed;
+
     switch (gGameStatus.boardIndex) {
     case CHILLY_WATERS:
         DoubleJunction* cw_node = junctionData;
@@ -67,15 +76,18 @@ s32 DoubleJunctionDecision(void* junctionData) {
 
         aiDecision = aiMain(cw_node->junctionNodeData, ARRAY_COUNT(ChillyWatersJunction0Nodes));
         if (aiDecision == DIRECTION_SWAP) {
-            return BAD_JUNCTION_RESULT;
+            SetPlayerNextChainAndSpaceFromAbsSpace(cw_spaces[1], SET_NEXT, 0);
+            //doesn't swap junction arrow decision, 51 frames
+            for (int i = 0; i < FRAME_COUNT_SWAP_DIRECTION; i++) {
+                ADV_SEED(cur_rng_seed);
+            }
+        } else {
+            SetPlayerNextChainAndSpaceFromAbsSpace(cw_spaces[0], SET_NEXT, 0);
+            //doesn't swap junction arrow decision, 42 frames
+            for (int i = 0; i < FRAME_COUNT_NO_DIRECTION_SWAP; i++) {
+                ADV_SEED(cur_rng_seed);
+            }
         }
-
-        //doesn't swap junction arrow decision, 42 frames
-        for (int i = 0; i < FRAME_COUNT_NO_DIRECTION_SWAP; i++) {
-            ADV_SEED(cur_rng_seed);
-        }
-
-        SetPlayerNextChainAndSpaceFromAbsSpace(cw_spaces[0], SET_NEXT, 0);
         break;
     case DEEP_BLOOPER_SEA:
         DoubleJunction* dbs_node = junctionData;

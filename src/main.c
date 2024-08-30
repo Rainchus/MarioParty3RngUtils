@@ -4,6 +4,12 @@
 #include "mp3.h"
 #include "util.h"
 
+u32 debug_seed_before_junction = 0;
+u32 debug_seed_before_dice_roll = 0;
+u32 debug_seed_item_space = 0;
+
+#define ITERATIONS_TO_RUN 3000
+
 #define ERROR -1
 #define OPTION_YES 1
 #define OPTION_NO 0
@@ -38,7 +44,7 @@ void PlayerFaceForward(void);
 u32 MeasureRngCalls(u32 seedStart, u32 seedEnd);
 u8 rand8(void);
 s32 GetSpaceIndexFromChainAndSpace(s32 curChainIndex, s32 curSpaceIndex);
-s32 HandleLogicFromItemSpace(s32, s16*);
+s32 HandleLogicFromItemSpace(s32);
 u32 GetChainAndSpaceFromAbsSpace(s32 space);
 void ResetStarSpaces(void);
 void SetStarSpace(s32 starSpaceIndex);
@@ -47,6 +53,9 @@ extern DecisionTreeNonLeafNode ShopDecisionNode[];
 s32 rng_advancements_walking_between_spaces[] = {6, 11, 16};
 s32 rng_advancements_jump_extra[] = {2, 5, 15}; //extra frames that jumping to a space takes
 s32 gForceJunctionDecision = -1; //used to force junction decision (when we dont care about advancing rng)
+u32 VALID_SEEDS = 0;
+extern s16 CurBoardHiddenBlockBlacklistCount;
+extern s16 D_801054B6;
 
 //D_80105210
 u16 boardSpaceCounts[] = {
@@ -63,6 +72,15 @@ char* speedsText[] = {
     "NORMAL",
     "SLOW",
 };
+
+void DebugPrint(char* format, ...) {
+    #ifdef DEBUG
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+    #endif
+}
 
 void DoShop(void) {
     //turn to face shop
@@ -130,7 +148,6 @@ void DoJumpAdvancements(s32 walkSpeed) {
 //used for finding the next space for the cpu on initial setup so the user doesn't have to enter it
 s32 CpuFindNextSpace(void) {
     Player* player = GetPlayerStruct(-1); //get current player struct
-    s32 funcEventResult;
     SpaceChain* curBoardChains = BoardChains[gGameStatus.boardIndex].boardChainData;
     s32 spaceID = GetSpaceIndexFromChainAndSpace(player->cur_chain_index, player->cur_space_index);
     SpaceData* space = &spacesForBoards[gGameStatus.boardIndex][spaceID];
@@ -145,7 +162,7 @@ s32 CpuFindNextSpace(void) {
 
     if (player->cur_space_index + 1 >= curBoardChains[player->cur_chain_index].amountOfSpaces) {
         if (space->eventFunction == 0) {
-            printf(ANSI_RED "Error: End of chain reached at space %02lX with no known link to next chain\n" ANSI_RESET, spaceID);
+            printf(ANSI_RED "Error: End of chain reached at space 0x%02lX with no known link to next chain\n" ANSI_RESET, spaceID);
             return ERROR;
         }
         //the next chain index and space index were set by a function, use this to get the next space
@@ -159,7 +176,6 @@ s32 CpuFindNextSpace(void) {
 //similar to CpuWalkSpaces but it doesn't advance rng and it needs to check both paths from a junction for a specific space
 s32 CalculateCpuNeededRoll(void) {
     Player* player = GetPlayerStruct(-1); //get current player struct
-    s32 funcEventResult;
     SpaceChain* curBoardChains = BoardChains[gGameStatus.boardIndex].boardChainData;
     s32 spaceID = GetSpaceIndexFromChainAndSpace(player->cur_chain_index, player->cur_space_index);
     SpaceData* space = &spacesForBoards[gGameStatus.boardIndex][spaceID];
@@ -177,9 +193,10 @@ s32 CalculateCpuNeededRoll(void) {
     //         return GetSpaceIndexFromChainAndSpace(player->cur_chain_index, player->cur_space_index + 1);
     //     }
     // }
+    return 0;
 }
 
-s32 CPUWalkSpaces(s32 diceRoll, s32 walkSpeed, s32 messageSpeed) {
+s32 CPUWalkSpaces(s32 diceRoll, s32 walkSpeed, s32 messageSpeed, s32 endSpace, s32 hiddenBlockBool) {
     Player* player = GetPlayerStruct(-1); //get current player struct
     s32 spaceID;
     s32 funcEventResult;
@@ -187,9 +204,9 @@ s32 CPUWalkSpaces(s32 diceRoll, s32 walkSpeed, s32 messageSpeed) {
 
     D_800D41C0 = diceRoll;
 
-    for (int i = 0; i < 12; i++) {
-        absSpacesWalked[i] = 0;
-    }
+    // for (int i = 0; i < 12; i++) {
+    //     absSpacesWalked[i] = 0;
+    // }
 
     //time to roll dice and start moving
     AdvanceRng(ROLL_DICE_BLOCK_TIME);
@@ -200,13 +217,20 @@ s32 CPUWalkSpaces(s32 diceRoll, s32 walkSpeed, s32 messageSpeed) {
             AdvanceRng(rng_advancements_jump_extra[walkSpeed]);
         }
 
+        //printf("Roll: %02d, 0x%04X -> 0x%04X\n", diceRoll, GetSpaceIndexFromChainAndSpace(player->cur_chain_index, player->cur_space_index), GetSpaceIndexFromChainAndSpace(player->next_chain_index, player->next_space_index));
+
         //move player to next space
         player->cur_chain_index = player->next_chain_index;
         player->cur_space_index = player->next_space_index;
 
         //advance rng seed by +1 each frame of walking to the space
-        AdvanceRng(rng_advancements_walking_between_spaces[walkSpeed]);
-
+        //skip 1 frame if manipulating hidden block
+        if (diceRoll == 1 && hiddenBlockBool == 1) {
+            AdvanceRng(rng_advancements_walking_between_spaces[walkSpeed] - 1);
+        } else {
+            AdvanceRng(rng_advancements_walking_between_spaces[walkSpeed]);
+        }
+        
         //check if next space would be out of array bounds
         //+1 to convert index -> non index
         SpaceChain* curBoardChains = BoardChains[gGameStatus.boardIndex].boardChainData;
@@ -216,18 +240,12 @@ s32 CPUWalkSpaces(s32 diceRoll, s32 walkSpeed, s32 messageSpeed) {
             SpaceData* space = &spacesForBoards[gGameStatus.boardIndex][spaceID];
 
             if (space->eventFunction == 0) {
-                printf(ANSI_RED "Error: End of chain reached at space %02lX with no known link to next chain\n" ANSI_RESET, spaceID);
+                printf(ANSI_RED "Error: End of chain reached at space 0x%02lX with no known link to next chain\n" ANSI_RESET, spaceID);
                 return ERROR;
             }
             //function pointer does exist, run function
             //TODO: be sure to fill in *all* rng advacements here
             funcEventResult = space->eventFunction(space->functionData);
-            switch (funcEventResult) {
-            case NORMAL_RETURN:
-                break;
-            case BAD_JUNCTION_RESULT:
-                return 0; //cpu went wrong way, exit
-            }
         } else {
             //otherwise, just increment next space id
             player->next_space_index++;
@@ -242,28 +260,33 @@ s32 CPUWalkSpaces(s32 diceRoll, s32 walkSpeed, s32 messageSpeed) {
             diceRoll--;
             D_800D41C0--;
         }
-
-        //printf("Dice: %d, Space: %04X\n", diceRoll, spaceID);
     }
-
-    //face player foward in 8 frames
-    AdvanceRng(8);
-    spacesWalked = absSpacesWalked;
-    return HandleLogicFromItemSpace(messageSpeed, spacesWalked);
+    spaceID = GetSpaceIndexFromChainAndSpace(player->cur_chain_index, player->cur_space_index);
+    if (spaceID != endSpace) {
+        return 0;
+    } else {
+        return 1;
+    }
 }
 
 void CpuItemLogicCheck(void) {
 
 }
 
+void print_debug_stats(void) {
+    printf("Seed before dice roll: %08X\n", debug_seed_before_dice_roll);
+    printf("Seed before junction: %08X\n", debug_seed_before_junction);
+    printf("Seed before item space: %08X\n", debug_seed_item_space);
+}
+
 //starts from placement of hidden blocks
-void DoPlayerTurn(s32 wantedRoll, s32 iteration, s32 absSpaceStart, s32 absSpaceNext, s32 absSpaceEnd) {
+void DoPlayerTurnHiddenBlock(s32 wantedRoll, s32 iteration, s32 absSpaceStart, s32 absSpaceNext, s32 absSpaceEnd) {
+    Player* player = GetPlayerStruct(-1);
     Blocks blockData;
     u8 diceRoll;
     u32 startingSeed = cur_rng_seed;
     u32 prevSeed;
     u16 spaceCount = boardSpaceCounts[gGameStatus.boardIndex];
-    u32 seedBeforeDiceRoll;
 
     blockData.coinBlockSpaceIndex = -1;
     blockData.itemBlockSpaceIndex = -1;
@@ -275,10 +298,8 @@ void DoPlayerTurn(s32 wantedRoll, s32 iteration, s32 absSpaceStart, s32 absSpace
         ADV_SEED(cur_rng_seed);
     }
 
+    //TODO: implement
     CpuItemLogicCheck();
-
-    // //TODO: item check here, make sure this is correctly handled
-    // ADV_SEED(cur_rng_seed);
 
     //rest of calls until dice block is hit
     for (int j = 0; j < 12; j++) {
@@ -286,15 +307,13 @@ void DoPlayerTurn(s32 wantedRoll, s32 iteration, s32 absSpaceStart, s32 absSpace
     }
 
     //get rolled number
-    seedBeforeDiceRoll = cur_rng_seed;
+    debug_seed_before_dice_roll = cur_rng_seed;
     diceRoll = RollDice();
 
     //if dice roll isn't correct number, exit
     if (diceRoll != wantedRoll) {
         return;
     }
-
-    
 
     //save seed before simulation is ran
     prevSeed = cur_rng_seed;
@@ -308,22 +327,111 @@ void DoPlayerTurn(s32 wantedRoll, s32 iteration, s32 absSpaceStart, s32 absSpace
             SetPlayerNextChainAndSpaceFromAbsSpace(absSpaceNext, SET_NEXT, 0);
 
             //move cpu across the board
-            s32 cpuTurnResult = CPUWalkSpaces(diceRoll, i, j); //try all walk and message speed combinations
+            s32 cpuTurnResult = CPUWalkSpaces(diceRoll, i, j, absSpaceEnd, 1); //try all walk and message speed combinations
             if (cpuTurnResult == ERROR) {
                 return;
-            } else if (cpuTurnResult == 1) {
-                //is wanted result, print info
+            }
+
+            if (cpuTurnResult == 0) {
+                continue;
+            }
+
+            s32 spaceID = GetSpaceIndexFromChainAndSpace(gPlayers[0].cur_chain_index, gPlayers[0].cur_space_index);
+            if (spaceID != blockData.itemBlockSpaceIndex) {
+                continue;
+            }
+            u32 seedBeforeRand = cur_rng_seed;
+            //cpu landed on correct space
+            u8 randByte = func_800EEF80_102BA0(100.0f) + 1;
+
+            if (randByte > 85 && randByte < 91) {
+                //printf("Seed before rand: %08X\n", seedBeforeRand);
                 printf("Calls: "ANSI_YELLOW"%ld"ANSI_WHITE", Seed: %08X, Roll: "ANSI_MAGENTA"%d"ANSI_WHITE" \t| Walk: "ANSI_RED"%s"ANSI_WHITE" \t| Message: "ANSI_RED"%s"ANSI_WHITE"\n", iteration, startingSeed, diceRoll, speedsText[i], speedsText[j]);
-                //printf("Seed Before Dice Roll: %08X\n", seedBeforeDiceRoll);
+                VALID_SEEDS++;
+            }
+
+            // //face player foward in 8 frames
+            // AdvanceRng(8);
+            // if (HandleLogicFromItemSpace(j) == 1) {
+            //     //print_debug_stats();
+            //     printf("Calls: "ANSI_YELLOW"%ld"ANSI_WHITE", Seed: %08X, Roll: "ANSI_MAGENTA"%d"ANSI_WHITE" \t| Walk: "ANSI_RED"%s"ANSI_WHITE" \t| Message: "ANSI_RED"%s"ANSI_WHITE"\n", iteration, startingSeed, diceRoll, speedsText[i], speedsText[j]);
+            //     VALID_SEEDS++;
+            // }
+            cur_rng_seed = prevSeed;
+        }
+    }
+}
+
+//starts from placement of hidden blocks
+void DoPlayerTurn(s32 wantedRoll, s32 iteration, s32 absSpaceStart, s32 absSpaceNext, s32 absSpaceEnd) {
+    Player* player = GetPlayerStruct(-1);
+    Blocks blockData;
+    u8 diceRoll;
+    u32 startingSeed = cur_rng_seed;
+    u32 prevSeed;
+    u16 spaceCount = boardSpaceCounts[gGameStatus.boardIndex];
+
+    blockData.coinBlockSpaceIndex = -1;
+    blockData.itemBlockSpaceIndex = -1;
+    blockData.starBlockSpaceIndex = -1;
+    PlaceHiddenBlocksMain(&blockData, spaceCount); //place hidden blocks
+
+    //calls until cpu makes decision on whether or not to use an item
+    for (int j = 0; j < 58; j++) {
+        ADV_SEED(cur_rng_seed);
+    }
+
+    //TODO: implement
+    CpuItemLogicCheck();
+
+    //rest of calls until dice block is hit
+    for (int j = 0; j < 12; j++) {
+        ADV_SEED(cur_rng_seed);
+    }
+
+    //get rolled number
+    debug_seed_before_dice_roll = cur_rng_seed;
+    diceRoll = RollDice();
+
+    //if dice roll isn't correct number, exit
+    if (diceRoll != wantedRoll) {
+        return;
+    }
+
+    //save seed before simulation is ran
+    prevSeed = cur_rng_seed;
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            //set player cur chain and space
+            SetPlayerNextChainAndSpaceFromAbsSpace(absSpaceStart, SET_CURRENT, 0);
+
+            //set player next chain and space
+            SetPlayerNextChainAndSpaceFromAbsSpace(absSpaceNext, SET_NEXT, 0);
+
+            //move cpu across the board
+            s32 cpuTurnResult = CPUWalkSpaces(diceRoll, i, j, absSpaceEnd, 0); //try all walk and message speed combinations
+            if (cpuTurnResult == ERROR) {
+                return;
+            }
+
+            if (cpuTurnResult == 0) {
+                continue;
+            }
+
+            //face player foward in 8 frames
+            AdvanceRng(8);
+            if (HandleLogicFromItemSpace(j) == 1) {
+                //print_debug_stats();
+                printf("Calls: "ANSI_YELLOW"%ld"ANSI_WHITE", Seed: %08X, Roll: "ANSI_MAGENTA"%d"ANSI_WHITE" \t| Walk: "ANSI_RED"%s"ANSI_WHITE" \t| Message: "ANSI_RED"%s"ANSI_WHITE"\n", iteration, startingSeed, diceRoll, speedsText[i], speedsText[j]);
+                VALID_SEEDS++;
             }
             cur_rng_seed = prevSeed;
         }
     }
 }
 
-//ReadParametersFromFile2("input.txt", &board, &startSpace, &endSpace, &starSpace, &p2Space, &p3Space, &p4Space);
-
-void ReadParametersFromFile2(const char* filename, u32* board, u32* startSpace, u32* endSpace, u32* starSpace,  u32* p2Space, u32* p3Space, u32* p4Space) {
+void ReadParametersFromFile2(const char* filename, u32* board, u32* starSpace, u32* startSpace, u32* nextSpace, u32* endSpace, u32* roll, u32* items, u32* numItems, u32* p2Space, u32* p3Space, u32* p4Space) {
     FILE* file = fopen(filename, "r");
     if (file == NULL) {
         perror("Failed to open input file");
@@ -339,11 +447,23 @@ void ReadParametersFromFile2(const char* filename, u32* board, u32* startSpace, 
             } else {
                 *board = (u32)atoi(valueStr);
             }
+        } else if (sscanf(line, "Star: %s", valueStr) == 1) {
+            if (strstr(valueStr, "0x") == valueStr) {
+                sscanf(valueStr, "0x%x", starSpace);
+            } else {
+                *starSpace = (u32)atoi(valueStr);
+            }
         } else if (sscanf(line, "StartSpace: %s", valueStr) == 1) {
             if (strstr(valueStr, "0x") == valueStr) {
                 sscanf(valueStr, "0x%x", startSpace);
             } else {
                 *startSpace = (u32)atoi(valueStr);
+            }
+        } else if (sscanf(line, "NextSpace: %s", valueStr) == 1) {
+            if (strstr(valueStr, "0x") == valueStr) {
+                sscanf(valueStr, "0x%x", nextSpace);
+            } else {
+                *nextSpace = (u32)atoi(valueStr);
             }
         } else if (sscanf(line, "EndSpace: %s", valueStr) == 1) {
             if (strstr(valueStr, "0x") == valueStr) {
@@ -351,11 +471,20 @@ void ReadParametersFromFile2(const char* filename, u32* board, u32* startSpace, 
             } else {
                 *endSpace = (u32)atoi(valueStr);
             }
-        } else if (sscanf(line, "Star: %s", valueStr) == 1) {
+        } else if (sscanf(line, "Roll: %s", valueStr) == 1) {
             if (strstr(valueStr, "0x") == valueStr) {
-                sscanf(valueStr, "0x%x", starSpace);
+                sscanf(valueStr, "0x%x", roll);
             } else {
-                *starSpace = (u32)atoi(valueStr);
+                *roll = (u32)atoi(valueStr);
+            }
+        } else if (sscanf(line, "Items: %[^\n]", valueStr) == 1) {
+            // Split the string by commas and parse each item
+            *numItems = 0;
+            char* token = strtok(valueStr, ",");
+            while (token != NULL && *numItems < 3) {
+                items[*numItems] = (s32)atoi(token);
+                (*numItems)++;
+                token = strtok(NULL, ",");
             }
         } else if (sscanf(line, "P2 Space: %s", valueStr) == 1) {
             if (strstr(valueStr, "0x") == valueStr) {
@@ -376,16 +505,6 @@ void ReadParametersFromFile2(const char* filename, u32* board, u32* startSpace, 
                 *p4Space = (u32)atoi(valueStr);
             }
         }
-        // else if (sscanf(line, "Item: %[^\n]", valueStr) == 1) {
-        //     // Split the string by commas and parse each item
-        //     *numItems = 0;
-        //     char* token = strtok(valueStr, ",");
-        //     while (token != NULL && *numItems < 3) {
-        //         items[*numItems] = (s32)atoi(token);
-        //         (*numItems)++;
-        //         token = strtok(NULL, ",");
-        //     }
-        // }
     }
 
     fclose(file);
@@ -465,9 +584,9 @@ void ReadParametersFromFile(const char* filename, u32* startSpace, u32* endSpace
 }
 
 s32 ConvertAbsSpaceToStarSpaceIndex(s32 spaceID) {
-    s16* curBoardStarSpaces = StarSpaces[gGameStatus.boardIndex];
+    s16* curBoardStarSpaces = HiddenBlockSpacesBlacklist[gGameStatus.boardIndex];
     s32 i = 0;
-    for (; i < 8; i++) { //TODO: waluigi's island has more than 8 star spaces...what do
+    for (; i < CurBoardHiddenBlockBlacklistCount; i++) {
         if (curBoardStarSpaces[i] == spaceID) {
             return i;
         } 
@@ -476,34 +595,43 @@ s32 ConvertAbsSpaceToStarSpaceIndex(s32 spaceID) {
     
 }
 
-int main(int argc, char* argv[]) {
-    u32 prevSeed = cur_rng_seed;
-    u32 startSpace, endSpace, board, roll, starSpace, p2Space, p3Space, p4Space = -1;
-    s32 items[3];
-    s32 numItems = 0;
-
-    ReadParametersFromFile2("input.txt", &board, &startSpace, &endSpace, &starSpace, &p2Space, &p3Space, &p4Space);
+void handle_item_space_mode(void) {
+    u32 prevSeed;
+    u32 startSpace, nextSpace, endSpace, board, roll, starSpace, p2Space, p3Space, p4Space = -1;
+    u32 items[3];
+    u32 numItems = 0;
+    printf("Item space mode activated.\n");
+    ReadParametersFromFile2("input.txt", &board, &starSpace, &startSpace, &nextSpace, &endSpace, &roll, &items, &numItems, &p2Space, &p3Space, &p4Space);
 
     //ReadParametersFromFile("input.txt", &startSpace, &endSpace, &p2Space, &p3Space, &p4Space, &board, &roll, &starSpace, items, &numItems);
     gGameStatus.boardIndex = board;
+    if (board == WALUIGIS_ISLAND) {
+        D_801054B6 = 1;
+        CurBoardHiddenBlockBlacklistCount = 0x17;
+    } else {
+        D_801054B6 = 0;
+        CurBoardHiddenBlockBlacklistCount = 8;
+    }
 
     SetPlayerNextChainAndSpaceFromAbsSpace(startSpace, SET_CURRENT, 0);
-    s32 nextSpaceResult = CpuFindNextSpace();
+    SetPlayerNextChainAndSpaceFromAbsSpace(nextSpace, SET_NEXT, 0);
+    // s32 nextSpaceResult = CpuFindNextSpace();
 
-    if (nextSpaceResult == ERROR) {
-        printf(ANSI_RED "Error: Invalid next space index\n" ANSI_RESET);
-        return EXIT_FAILURE;        
-    }
+    // if (nextSpaceResult == ERROR) {
+    //     printf(ANSI_RED "Error: Invalid next space index\n" ANSI_RESET);
+    //     return EXIT_FAILURE;        
+    // }
 
     printf(
         "Board: 0x%02X\n"
         "StartSpace: 0x%02X\n"
+        "NextSpace: 0x%02X\n"
         "EndSpace: 0x%02X\n"
         "Star: 0x%02X\n"
         "P2 Space: 0x%02X\n"
         "P3 Space: 0x%02X\n"
         "P4 Space: 0x%02X\n",
-        board, startSpace, endSpace, starSpace, p2Space, p3Space, p4Space 
+        board, startSpace, nextSpace, endSpace, starSpace, p2Space, p3Space, p4Space 
     );
 
     // printf(
@@ -539,22 +667,121 @@ int main(int argc, char* argv[]) {
     SetPlayerNextChainAndSpaceFromAbsSpace(p4Space, SET_CURRENT, 3);
 
     s32 starSpaceIndex = ConvertAbsSpaceToStarSpaceIndex(starSpace);
-    printf("Star: %02X", starSpaceIndex);
+    printf("Star: %02lX\n", starSpaceIndex);
 
     if (starSpaceIndex >= 8) {
-        printf(ANSI_RED "Error: Invalid star space index of %d passed. max is 7\n" ANSI_RESET, starSpaceIndex);
-        return EXIT_FAILURE;
+        printf(ANSI_RED "Error: Invalid star space index of %ld passed. max is 7\n" ANSI_RESET, starSpaceIndex);
+        return;
     }
 
     SetStarSpawnData(starSpaceIndex);
-    //simulate first 3000 seeds
-    for (s32 i = 0; i < 3000; i++) {
+    VALID_SEEDS = 0;
+
+    //it takes approximately 900 frames to load into a board, show only results after this
+    // for (s32 i = 0; i < 962; i++) {
+    //     ADV_SEED(cur_rng_seed);
+    // }
+
+    prevSeed = cur_rng_seed;
+    //simulate ITERATIONS_TO_RUN seeds
+    for (s32 i = 0; i < ITERATIONS_TO_RUN; i++) {
         ResetStarSpaces();
         SetStarSpace(starSpaceIndex);
-        DoPlayerTurn(roll, i, startSpace, nextSpaceResult, endSpace);
+        DoPlayerTurn(roll, i, startSpace, nextSpace, endSpace);
         ADV_SEED(prevSeed);
         cur_rng_seed = prevSeed;
     }
+    printf("Valid Seeds Found: %d\n", VALID_SEEDS);
+}
+
+void hidden_block_gen_main(int starSpace, int curSpaceID, int nextSpaceID, int endSpaceID, int board, int wantedRoll) {
+    u32 starting_seed = cur_rng_seed;
+    u32 prev_seed;
+    u32 prev_seed2;
+    Blocks blockData;
+    s32 diceRoll;
+    u32 prevSeed;
+    u16 spaceCount = boardSpaceCounts[gGameStatus.boardIndex];
+
+    VALID_SEEDS = 0;
+    gGameStatus.boardIndex = board;
+    if (board == WALUIGIS_ISLAND) {
+        D_801054B6 = 1;
+        CurBoardHiddenBlockBlacklistCount = 0x17;
+    } else {
+        D_801054B6 = 0;
+        CurBoardHiddenBlockBlacklistCount = 8;
+    }
+    SetStarSpawnData(starSpace);
+    prevSeed = cur_rng_seed;
+    //simulate ITERATIONS_TO_RUN seeds
+    for (s32 i = 0; i < ITERATIONS_TO_RUN; i++) {
+        ResetStarSpaces();
+        SetStarSpace(starSpace);
+        DoPlayerTurnHiddenBlock(wantedRoll, i, curSpaceID, nextSpaceID, endSpaceID);
+        s32 spaceID = GetSpaceIndexFromChainAndSpace(gPlayers[0].cur_chain_index, gPlayers[0].cur_space_index);
+        ADV_SEED(prevSeed);
+        cur_rng_seed = prevSeed;
+    }
+
+    printf("Valid Seeds Found: %d\n", VALID_SEEDS);
+}
+
+void handle_hidden_block_main(void) {
+    u32 prevSeed;
+    u32 startSpace, nextSpace, endSpace, board, roll, starSpace, p2Space, p3Space, p4Space = -1;
+    u32 items[3];
+    u32 numItems = 0;
+    printf("hidden block mode activated.\n");
+    ReadParametersFromFile2("input.txt", &board, &starSpace, &startSpace, &nextSpace, &endSpace, &roll, &items, &numItems, &p2Space, &p3Space, &p4Space);
+    printf(
+        "Board: 0x%02X\n"
+        "Star: 0x%02X\n"
+        "StartSpace: 0x%02X\n"
+        "NextSpace: 0x%02X\n"
+        "EndSpace: 0x%02X\n"
+        "P2 Space: 0x%02X\n"
+        "P3 Space: 0x%02X\n"
+        "P4 Space: 0x%02X\n",
+        board, starSpace, startSpace, nextSpace, endSpace, p2Space, p3Space, p4Space 
+    );
+    hidden_block_gen_main(starSpace, startSpace, nextSpace, endSpace, board, roll);
+}
+
+int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s --item_space\n", argv[0]);
+        fprintf(stderr, "       %s --hidden_block\n", argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    if (strcmp(argv[1], "--item_space") == 0) {
+        handle_item_space_mode();
+    } else if (strcmp(argv[1], "--hidden_block") == 0) {
+        handle_hidden_block_main();
+    }
+
+    // if (strcmp(argv[1], "--item_space") == 0) {
+    //     if (argc != 2) {
+    //         fprintf(stderr, "Error: --item_space does not require additional arguments.\n");
+    //         return EXIT_FAILURE;
+    //     }
+    //     handle_item_space_mode();
+    // } else if (strcmp(argv[1], "--hidden_block") == 0) {
+    //     if (argc != 7) {
+    //         fprintf(stderr, "Error: --hidden_block requires exactly 5 integer arguments.\n");
+    //         return EXIT_FAILURE;
+    //     }
+    //     int curSpaceID = atoi(argv[2]);
+    //     int nextSpaceID = atoi(argv[3]);
+    //     int endSpaceID = atoi(argv[4]);
+    //     int boardIndex = atoi(argv[5]);
+    //     int wantedRoll = atoi(argv[6]);
+    //     hidden_block_gen_main(curSpaceID, nextSpaceID, endSpaceID, boardIndex, wantedRoll);
+    // } else {
+    //     fprintf(stderr, "Error: Unknown argument '%s'.\n", argv[1]);
+    //     return EXIT_FAILURE;
+    // }
 
     return EXIT_SUCCESS;
 }
