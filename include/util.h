@@ -33,10 +33,12 @@ extern s16 CW_Space_34[];
 extern s16 DBS_Space_25[];
 extern s16 WI_Space_2C[];
 extern s16 WW_Space_01[];
+extern s16 SD_Space_45[];
 extern DoubleJunction CW_Space_6C;
 extern DoubleJunction DBS_Space_68;
 extern DoubleJunction WW_Space_67;
 extern DoubleJunction CC_Space_83;
+extern DoubleJunction SD_Space_79;
 extern BoardChainsData BoardChains[];
 extern s32 rng_advancements_between_spaces[3];
 

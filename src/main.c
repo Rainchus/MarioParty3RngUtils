@@ -269,14 +269,30 @@ s32 CPUWalkSpaces(s32 diceRoll, s32 walkSpeed, s32 messageSpeed, s32 endSpace, s
     }
 }
 
-void CpuItemLogicCheck(void) {
-
+s32 CpuItemLogicCheck(void) {
+    if (
+        (gPlayers[0].items[0] == ITEM_MUSHROOM) ||
+        (gPlayers[0].items[1] == ITEM_MUSHROOM) ||
+        (gPlayers[0].items[2] == ITEM_MUSHROOM)
+    ) {
+        if (RNGPercentChance(80) == 1) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 void print_debug_stats(void) {
     printf("Seed before dice roll: %08X\n", debug_seed_before_dice_roll);
     printf("Seed before junction: %08X\n", debug_seed_before_junction);
     printf("Seed before item space: %08X\n", debug_seed_item_space);
+}
+
+void DoNumberOfPauseBuffers(s32 pauseBufferAmount) {
+    s32 advancements = pauseBufferAmount * 5; //5 advancements with perfect pauses
+    for (int i = 0; i< advancements; i++) {
+        ADV_SEED(cur_rng_seed);
+    }
 }
 
 //starts from placement of hidden blocks
@@ -299,7 +315,9 @@ void DoPlayerTurnHiddenBlock(s32 wantedRoll, s32 iteration, s32 absSpaceStart, s
     }
 
     //TODO: implement
-    CpuItemLogicCheck();
+    if (CpuItemLogicCheck() == 1) {
+        return;
+    }
 
     //rest of calls until dice block is hit
     for (int j = 0; j < 12; j++) {
@@ -317,47 +335,51 @@ void DoPlayerTurnHiddenBlock(s32 wantedRoll, s32 iteration, s32 absSpaceStart, s
 
     //save seed before simulation is ran
     prevSeed = cur_rng_seed;
+    for (int k = 0; k < 3; k++) {
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                //set player cur chain and space
+                SetPlayerNextChainAndSpaceFromAbsSpace(absSpaceStart, SET_CURRENT, 0);
 
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            //set player cur chain and space
-            SetPlayerNextChainAndSpaceFromAbsSpace(absSpaceStart, SET_CURRENT, 0);
+                //set player next chain and space
+                SetPlayerNextChainAndSpaceFromAbsSpace(absSpaceNext, SET_NEXT, 0);
 
-            //set player next chain and space
-            SetPlayerNextChainAndSpaceFromAbsSpace(absSpaceNext, SET_NEXT, 0);
+                //move cpu across the board
+                s32 cpuTurnResult = CPUWalkSpaces(diceRoll, i, j, absSpaceEnd, 1); //try all walk and message speed combinations
+                if (cpuTurnResult == ERROR) {
+                    return;
+                }
 
-            //move cpu across the board
-            s32 cpuTurnResult = CPUWalkSpaces(diceRoll, i, j, absSpaceEnd, 1); //try all walk and message speed combinations
-            if (cpuTurnResult == ERROR) {
-                return;
+                if (cpuTurnResult == 0) {
+                    cur_rng_seed = prevSeed;
+                    continue;
+                }
+
+                s32 spaceID = GetSpaceIndexFromChainAndSpace(gPlayers[0].cur_chain_index, gPlayers[0].cur_space_index);
+                if (spaceID != blockData.itemBlockSpaceIndex) {
+                    cur_rng_seed = prevSeed;
+                    continue;
+                }
+                DoNumberOfPauseBuffers(k);
+                u32 seedBeforeRand = cur_rng_seed;
+                //cpu landed on correct space
+                u8 randByte = func_800EEF80_102BA0(100.0f) + 1;
+
+                if (randByte > 85 && randByte < 91) {
+                    printf("Seed before rand: %08X\n", seedBeforeRand);
+                    printf("Calls: "ANSI_YELLOW"%ld"ANSI_WHITE", Seed: %08X, Roll: "ANSI_MAGENTA"%d"ANSI_WHITE" Pauses: %01d \t| Walk: "ANSI_RED"%s"ANSI_WHITE" \t| Message: "ANSI_RED"%s"ANSI_WHITE"\n", iteration, startingSeed, diceRoll, k, speedsText[i], speedsText[j]);
+                    VALID_SEEDS++;
+                }
+
+                // //face player foward in 8 frames
+                // AdvanceRng(8);
+                // if (HandleLogicFromItemSpace(j) == 1) {
+                //     //print_debug_stats();
+                //     printf("Calls: "ANSI_YELLOW"%ld"ANSI_WHITE", Seed: %08X, Roll: "ANSI_MAGENTA"%d"ANSI_WHITE" \t| Walk: "ANSI_RED"%s"ANSI_WHITE" \t| Message: "ANSI_RED"%s"ANSI_WHITE"\n", iteration, startingSeed, diceRoll, speedsText[i], speedsText[j]);
+                //     VALID_SEEDS++;
+                // }
+                cur_rng_seed = prevSeed;
             }
-
-            if (cpuTurnResult == 0) {
-                continue;
-            }
-
-            s32 spaceID = GetSpaceIndexFromChainAndSpace(gPlayers[0].cur_chain_index, gPlayers[0].cur_space_index);
-            if (spaceID != blockData.itemBlockSpaceIndex) {
-                continue;
-            }
-            u32 seedBeforeRand = cur_rng_seed;
-            //cpu landed on correct space
-            u8 randByte = func_800EEF80_102BA0(100.0f) + 1;
-
-            if (randByte > 85 && randByte < 91) {
-                //printf("Seed before rand: %08X\n", seedBeforeRand);
-                printf("Calls: "ANSI_YELLOW"%ld"ANSI_WHITE", Seed: %08X, Roll: "ANSI_MAGENTA"%d"ANSI_WHITE" \t| Walk: "ANSI_RED"%s"ANSI_WHITE" \t| Message: "ANSI_RED"%s"ANSI_WHITE"\n", iteration, startingSeed, diceRoll, speedsText[i], speedsText[j]);
-                VALID_SEEDS++;
-            }
-
-            // //face player foward in 8 frames
-            // AdvanceRng(8);
-            // if (HandleLogicFromItemSpace(j) == 1) {
-            //     //print_debug_stats();
-            //     printf("Calls: "ANSI_YELLOW"%ld"ANSI_WHITE", Seed: %08X, Roll: "ANSI_MAGENTA"%d"ANSI_WHITE" \t| Walk: "ANSI_RED"%s"ANSI_WHITE" \t| Message: "ANSI_RED"%s"ANSI_WHITE"\n", iteration, startingSeed, diceRoll, speedsText[i], speedsText[j]);
-            //     VALID_SEEDS++;
-            // }
-            cur_rng_seed = prevSeed;
         }
     }
 }
@@ -381,8 +403,9 @@ void DoPlayerTurn(s32 wantedRoll, s32 iteration, s32 absSpaceStart, s32 absSpace
         ADV_SEED(cur_rng_seed);
     }
 
-    //TODO: implement
-    CpuItemLogicCheck();
+    if (CpuItemLogicCheck() == 1) {
+        return;
+    }
 
     //rest of calls until dice block is hit
     for (int j = 0; j < 12; j++) {
@@ -402,7 +425,7 @@ void DoPlayerTurn(s32 wantedRoll, s32 iteration, s32 absSpaceStart, s32 absSpace
     prevSeed = cur_rng_seed;
 
     for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
+        for (int j = 0; j < 3; j++, cur_rng_seed = prevSeed) {
             //set player cur chain and space
             SetPlayerNextChainAndSpaceFromAbsSpace(absSpaceStart, SET_CURRENT, 0);
 
@@ -426,7 +449,6 @@ void DoPlayerTurn(s32 wantedRoll, s32 iteration, s32 absSpaceStart, s32 absSpace
                 printf("Calls: "ANSI_YELLOW"%ld"ANSI_WHITE", Seed: %08X, Roll: "ANSI_MAGENTA"%d"ANSI_WHITE" \t| Walk: "ANSI_RED"%s"ANSI_WHITE" \t| Message: "ANSI_RED"%s"ANSI_WHITE"\n", iteration, startingSeed, diceRoll, speedsText[i], speedsText[j]);
                 VALID_SEEDS++;
             }
-            cur_rng_seed = prevSeed;
         }
     }
 }
@@ -674,17 +696,13 @@ void handle_item_space_mode(void) {
         return;
     }
 
+    AdvanceRng(900); //skip the first 900 seeds as you cannot reach them
     SetStarSpawnData(starSpaceIndex);
     VALID_SEEDS = 0;
-
-    //it takes approximately 900 frames to load into a board, show only results after this
-    // for (s32 i = 0; i < 962; i++) {
-    //     ADV_SEED(cur_rng_seed);
-    // }
-
     prevSeed = cur_rng_seed;
+    
     //simulate ITERATIONS_TO_RUN seeds
-    for (s32 i = 0; i < ITERATIONS_TO_RUN; i++) {
+    for (s32 i = 900; i < ITERATIONS_TO_RUN; i++) {
         ResetStarSpaces();
         SetStarSpace(starSpaceIndex);
         DoPlayerTurn(roll, i, startSpace, nextSpace, endSpace);
@@ -703,7 +721,6 @@ void hidden_block_gen_main(int starSpace, int curSpaceID, int nextSpaceID, int e
     u32 prevSeed;
     u16 spaceCount = boardSpaceCounts[gGameStatus.boardIndex];
 
-    VALID_SEEDS = 0;
     gGameStatus.boardIndex = board;
     if (board == WALUIGIS_ISLAND) {
         D_801054B6 = 1;
@@ -712,10 +729,14 @@ void hidden_block_gen_main(int starSpace, int curSpaceID, int nextSpaceID, int e
         D_801054B6 = 0;
         CurBoardHiddenBlockBlacklistCount = 8;
     }
+
+    AdvanceRng(900); //skip the first 900 seeds as you cannot reach them
     SetStarSpawnData(starSpace);
+    VALID_SEEDS = 0;
     prevSeed = cur_rng_seed;
+
     //simulate ITERATIONS_TO_RUN seeds
-    for (s32 i = 0; i < ITERATIONS_TO_RUN; i++) {
+    for (s32 i = 900; i < 9000; i++) {
         ResetStarSpaces();
         SetStarSpace(starSpace);
         DoPlayerTurnHiddenBlock(wantedRoll, i, curSpaceID, nextSpaceID, endSpaceID);
@@ -748,10 +769,39 @@ void handle_hidden_block_main(void) {
     hidden_block_gen_main(starSpace, startSpace, nextSpace, endSpace, board, roll);
 }
 
+void handle_duel_roll_chain(u32 rollAmount) {
+    printf("Roll Amount: %d\n", rollAmount);
+    u32 startSeed = cur_rng_seed;
+    u32 prevSeed = cur_rng_seed;
+    u32 rollchain = 0;
+    u32 seedChainStart = 0;
+
+    for (int i = 0; i < 3000; i++, ADV_SEED(prevSeed), cur_rng_seed = prevSeed) {
+        // AdvanceRng(6); //6 frames from press A -> dice block
+        //add 70 frames for load in, but then subtract 6 for the frames it takes to press A and hit the dice block
+        // AdvanceRng(70 - 6);
+        u8 roll = RollDice();
+        if (roll != rollAmount) {
+            continue;
+        }
+        u8 roll2 = RollDice();
+        //if it is the wanted roll, seed how many seeds after it are the wanted roll as well
+        int j = 0;
+        for (; roll2 == rollAmount; j++) {
+            roll2 = RollDice();
+        }
+        rollchain = j + 1;
+        if (rollchain >= 2) {
+            printf("Calls: %d, Chain: %d, Starting Seed: %08X\n", i, rollchain, prevSeed);
+        }
+    }
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         fprintf(stderr, "Usage: %s --item_space\n", argv[0]);
         fprintf(stderr, "       %s --hidden_block\n", argv[0]);
+        fprintf(stderr, "       %s --roll_chain\n", argv[0]);
         return EXIT_FAILURE;
     }
 
@@ -759,6 +809,8 @@ int main(int argc, char *argv[]) {
         handle_item_space_mode();
     } else if (strcmp(argv[1], "--hidden_block") == 0) {
         handle_hidden_block_main();
+    } else if (strcmp(argv[1], "--roll_chain") == 0) {
+        handle_duel_roll_chain((u32)atoi(argv[2]));
     }
 
     // if (strcmp(argv[1], "--item_space") == 0) {

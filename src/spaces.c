@@ -107,6 +107,23 @@ s32 DoubleJunctionDecision(void* junctionData) {
         SetPlayerNextChainAndSpaceFromAbsSpace(dbs_spaces[1], SET_NEXT, 0);
         break;
     case SPINY_DESERT:
+        DoubleJunction* sd_node = junctionData;
+        s16* sd_spaces = sd_node->spaceABS;
+
+        aiDecision = aiMain(sd_node->junctionNodeData, 8);
+        if (aiDecision == DIRECTION_SWAP) {
+            SetPlayerNextChainAndSpaceFromAbsSpace(sd_spaces[1], SET_NEXT, 0);
+            //doesn't swap junction arrow decision, 51 frames
+            for (int i = 0; i < FRAME_COUNT_SWAP_DIRECTION; i++) {
+                ADV_SEED(cur_rng_seed);
+            }
+        } else {
+            SetPlayerNextChainAndSpaceFromAbsSpace(sd_spaces[0], SET_NEXT, 0);
+            //doesn't swap junction arrow decision, 42 frames
+            for (int i = 0; i < FRAME_COUNT_NO_DIRECTION_SWAP; i++) {
+                ADV_SEED(cur_rng_seed);
+            }
+        }
         break;
     case WOODY_WOODS:
         DoubleJunction* ww_node = junctionData;
