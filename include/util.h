@@ -33,6 +33,7 @@ extern s16 CW_Space_34[];
 extern s16 DBS_Space_25[];
 extern s16 WI_Space_2C[];
 extern s16 WW_Space_01[];
+extern s16 WW_Space_74[];
 extern s16 SD_Space_45[];
 extern DoubleJunction CW_Space_6C;
 extern DoubleJunction DBS_Space_68;
@@ -43,6 +44,7 @@ extern BoardChainsData BoardChains[];
 extern s32 rng_advancements_between_spaces[3];
 
 s32 SetNextSpace(void* funcData);
+s32 SetNextSpace_WoodyWoodsCustom(void* funcData);
 s32 DoubleJunctionDecision(void* junctionData);
 void SetPlayerNextChainAndSpaceFromAbsSpace(s32 absSpace, s32 mode, s32 playerIndex);
 s32 func_800F9A68_10D688(s32 arg0);
