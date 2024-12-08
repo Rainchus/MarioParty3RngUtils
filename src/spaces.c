@@ -48,6 +48,15 @@ s32 SetNextSpace(void* funcData) {
     return NORMAL_RETURN;
 }
 
+//we only ever care about the first player, so hardcode to player index 0
+s32 SetNextSpace_WoodyWoodsCustom(void* funcData) {
+    s16* spaces = funcData;
+
+    SetPlayerNextChainAndSpaceFromAbsSpace(spaces[0], SET_NEXT, 0);
+    ADV_SEED(cur_rng_seed); //this advances the seed an extra time?
+    return NORMAL_RETURN;
+}
+
 extern s32 gForceJunctionDecision;
 //TODO: this should not have hardcoded directions in it.
 //Instead, we should walk the spaces and then check -

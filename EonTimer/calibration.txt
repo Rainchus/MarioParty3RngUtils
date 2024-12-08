@@ -1,1 +1,10 @@
 Calibration = 133 (N64 Console)
+
+the star in the opening cutscene advances the seed by 800
+for woody woods, add 3,367 calibration to current calibration
+
+Cur calibration
+333 currently, 3700 woody woods
+
+wouldn't go lower than this for woody woods
+Calls: 1172

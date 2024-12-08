@@ -7,6 +7,7 @@
 u32 debug_seed_before_junction = 0;
 u32 debug_seed_before_dice_roll = 0;
 u32 debug_seed_item_space = 0;
+u32 debug_seedBeforeItemDecision = 0;
 
 #define ITERATIONS_TO_RUN 3000
 
@@ -37,7 +38,7 @@ char* ShopOptions[] = {
     "Wacky Watch",
 };
 
-s16 absSpacesWalked[20] = {0};
+s16 absSpacesWalked[20] = {-1};
 
 void DoBankAdvancements(s32 messageSpeed);
 void PlayerFaceForward(void);
@@ -200,13 +201,14 @@ s32 CPUWalkSpaces(s32 diceRoll, s32 walkSpeed, s32 messageSpeed, s32 endSpace, s
     Player* player = GetPlayerStruct(-1); //get current player struct
     s32 spaceID;
     s32 funcEventResult;
-    s16* spacesWalked = absSpacesWalked;
+    s32 spacesWalked = 0;
+    s32 loopCounter = 0;
 
     D_800D41C0 = diceRoll;
 
-    // for (int i = 0; i < 12; i++) {
-    //     absSpacesWalked[i] = 0;
-    // }
+    for (int i = 0; i < 20; i++) {
+        absSpacesWalked[i] = -1;
+    }
 
     //time to roll dice and start moving
     AdvanceRng(ROLL_DICE_BLOCK_TIME);
@@ -214,6 +216,7 @@ s32 CPUWalkSpaces(s32 diceRoll, s32 walkSpeed, s32 messageSpeed, s32 endSpace, s
     while (diceRoll > 0) {
         //check if we should jump to the next space, and if so, add rng advancements as needed
         if (func_800F9A68_10D688(0) == 1) {
+            //printf("Jump occurred\n");
             AdvanceRng(rng_advancements_jump_extra[walkSpeed]);
         }
 
@@ -253,12 +256,22 @@ s32 CPUWalkSpaces(s32 diceRoll, s32 walkSpeed, s32 messageSpeed, s32 endSpace, s
 
         spaceID = GetSpaceIndexFromChainAndSpace(player->cur_chain_index, player->cur_space_index);
         SpaceData* space = &spacesForBoards[gGameStatus.boardIndex][spaceID];
-        *spacesWalked++ = spaceID;
+        if (absSpacesWalked[spacesWalked] == spaceID) {
+            //printf("Walked to same space???\n");
+            return ERROR;
+        } else {
+            absSpacesWalked[spacesWalked++] = spaceID;
+        }
 
         s32 shouldDecrementRoll = HandleSpaceType(space->space_type, messageSpeed);
         if (shouldDecrementRoll == TRUE) {
             diceRoll--;
             D_800D41C0--;
+        }
+        loopCounter++;
+        if (loopCounter > 20) {
+            //printf("Loop counter greater than 20???\n");
+            return ERROR;
         }
     }
     spaceID = GetSpaceIndexFromChainAndSpace(player->cur_chain_index, player->cur_space_index);
@@ -283,10 +296,19 @@ s32 CpuItemLogicCheck(void) {
 }
 
 void print_debug_stats(void) {
-    printf("Seed before dice roll: %08X\n", debug_seed_before_dice_roll);
-    printf("Seed before junction: %08X\n", debug_seed_before_junction);
-    printf("Seed before item space: %08X\n", debug_seed_item_space);
+    LOG("Seed before dice roll: %08X\n", debug_seed_before_dice_roll);
+    //LOG("Seed before junction: %08X\n", debug_seed_before_junction);
+    //LOG("Seed before item space: %08X\n", debug_seed_item_space);
 }
+
+void print_debug_stats_hidden_block(void) {
+    LOG("Seed before dice roll: %08X\n", debug_seed_before_dice_roll);
+    LOG("Seed before item decision: %08X\n", debug_seedBeforeItemDecision);
+}
+
+// void print_debug_stats(void) {
+//     printf("Seed before dice roll: %08X\n", debug_seed_before_dice_roll);
+// }
 
 void DoNumberOfPauseBuffers(s32 pauseBufferAmount) {
     s32 advancements = pauseBufferAmount * 5; //5 advancements with perfect pauses
@@ -361,12 +383,13 @@ void DoPlayerTurnHiddenBlock(s32 wantedRoll, s32 iteration, s32 absSpaceStart, s
                     continue;
                 }
                 DoNumberOfPauseBuffers(k);
-                u32 seedBeforeRand = cur_rng_seed;
+                u32 debug_seedBeforeItemDecision = cur_rng_seed;
                 //cpu landed on correct space
                 u8 randByte = func_800EEF80_102BA0(100.0f) + 1;
 
                 if (randByte > 85 && randByte < 91) {
-                    printf("Seed before rand: %08X\n", seedBeforeRand);
+                    //printf("Seed before rand: %08X\n", seedBeforeRand);
+                    print_debug_stats_hidden_block();
                     printf("Calls: "ANSI_YELLOW"%ld"ANSI_WHITE", Seed: %08X, Roll: "ANSI_MAGENTA"%d"ANSI_WHITE" Pauses: %01d \t| Walk: "ANSI_RED"%s"ANSI_WHITE" \t| Message: "ANSI_RED"%s"ANSI_WHITE"\n", iteration, startingSeed, diceRoll, k, speedsText[i], speedsText[j]);
                     VALID_SEEDS++;
                 }
@@ -424,7 +447,7 @@ void DoPlayerTurn(s32 wantedRoll, s32 iteration, s32 absSpaceStart, s32 absSpace
     //save seed before simulation is ran
     prevSeed = cur_rng_seed;
 
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 3; i++, cur_rng_seed = prevSeed) {
         for (int j = 0; j < 3; j++, cur_rng_seed = prevSeed) {
             //set player cur chain and space
             SetPlayerNextChainAndSpaceFromAbsSpace(absSpaceStart, SET_CURRENT, 0);
@@ -445,7 +468,24 @@ void DoPlayerTurn(s32 wantedRoll, s32 iteration, s32 absSpaceStart, s32 absSpace
             //face player foward in 8 frames
             AdvanceRng(8);
             if (HandleLogicFromItemSpace(j) == 1) {
-                //print_debug_stats();
+                //bandaid fix until it's figured out why the same space -
+                //gets walked on multiple times
+                s32 validSeed = 1;
+                for (int k = 0; k < 19 && absSpacesWalked[k] != -1; k++) {
+                    if (absSpacesWalked[k] == absSpacesWalked[k+1]) {
+                        validSeed = 0;
+                        break;
+                    }
+                }
+                if (validSeed == 0) {
+                    continue;
+                }
+
+                print_debug_stats();
+                // for (int k = 0; k < 19 && absSpacesWalked[k] != -1; k++) {
+                //     printf("%02X, ", absSpacesWalked[k]);
+                // }
+
                 printf("Calls: "ANSI_YELLOW"%ld"ANSI_WHITE", Seed: %08X, Roll: "ANSI_MAGENTA"%d"ANSI_WHITE" \t| Walk: "ANSI_RED"%s"ANSI_WHITE" \t| Message: "ANSI_RED"%s"ANSI_WHITE"\n", iteration, startingSeed, diceRoll, speedsText[i], speedsText[j]);
                 VALID_SEEDS++;
             }

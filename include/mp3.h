@@ -268,5 +268,11 @@ extern SpaceData* spacesForBoards[];
 extern u32 cur_rng_seed;
 extern u32 rng_seeds_by_index[];
 extern s16* HiddenBlockSpacesBlacklist[6];
+#define ENABLE_LOG
+#ifdef ENABLE_LOG
+    #define LOG(fmt, ...) printf(fmt, ##__VA_ARGS__)
+#else
+    #define LOG(fmt, ...) // Empty macro when logging is disabled
+#endif
 
 #endif
